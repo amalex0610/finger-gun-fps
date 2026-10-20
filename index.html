@@ -1294,27 +1294,36 @@ class KamikazeDrone {
     this.y = -60;
     this.targetX = canvas.width * 0.5 + (Math.random() - 0.5) * 120;
     this.targetY = canvas.height * 0.55;
-    this.speed = 2.8 + Math.random() * 2.0;
+    this.speed = 1.3 + Math.random() * 0.8;
     this.hp = 2;
     this.angle = 0;
     this.beepTimer = 0;
     this.scale = 0.6;
+    this.armTimer = 0.45; // 0.45秒警報滯空期，讓手機玩家有充裕時間反應瞄準
   }
 
   update(dt, timeScale) {
-    this.angle += 0.12 * timeScale;
+    this.angle += 0.08 * timeScale;
+
+    // 登場警報滯空期
+    if (this.armTimer > 0) {
+      this.armTimer -= dt * timeScale;
+      this.y += 0.8 * timeScale;
+      return false;
+    }
 
     const dx = this.targetX - this.x;
     const dy = this.targetY - this.y;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.hypot(dx, dy) || 1;
 
-    this.x += (dx / dist) * this.speed * 2.2 * timeScale;
-    this.y += (dy / dist) * this.speed * 2.2 * timeScale;
-    this.speed += 0.05 * timeScale;
-    this.scale = Math.min(2.4, this.scale + 0.015 * timeScale);
+    // 俯衝速度適度平緩，確保手機端不卡頓且能擊落
+    this.x += (dx / dist) * this.speed * 1.35 * timeScale;
+    this.y += (dy / dist) * this.speed * 1.35 * timeScale;
+    this.speed += 0.015 * timeScale;
+    this.scale = Math.min(2.1, this.scale + 0.009 * timeScale);
 
     this.beepTimer += dt * timeScale;
-    if (this.beepTimer > 0.35) {
+    if (this.beepTimer > 0.4) {
       this.beepTimer = 0;
       sfx.playAlertBeep();
     }
@@ -1465,7 +1474,7 @@ function destroyBoss() {
 }
 
 class EnemyBullet {
-  constructor(x, y, targetX, targetY, speed = 3.5, color = '#ff0055', radius = 14) {
+  constructor(x, y, targetX, targetY, speed = 2.2, color = '#ff0055', radius = 14) {
     this.x = x;
     this.y = y;
     this.radius = radius;
@@ -1630,7 +1639,7 @@ class CyberDreadnought {
       else if (this.x < canvas.width * 0.35) this.moveDir = 1;
 
       this.shootTimer += dt * timeScale;
-      const interval = this.currentPhase === 1 ? 2.2 : 1.25;
+      const interval = this.currentPhase === 1 ? 3.0 : 2.0;
 
       if (this.shootTimer > interval) {
         this.shootTimer = 0;
@@ -1638,16 +1647,16 @@ class CyberDreadnought {
 
         if (this.currentPhase === 1) {
           if (this.leftCore.alive) {
-            enemyBullets.push(new EnemyBullet(this.x + this.leftCore.relX, this.y + 20, canvas.width * 0.4, canvas.height * 0.7));
+            enemyBullets.push(new EnemyBullet(this.x + this.leftCore.relX, this.y + 20, canvas.width * 0.4, canvas.height * 0.7, 2.0));
           }
           if (this.rightCore.alive) {
-            enemyBullets.push(new EnemyBullet(this.x + this.rightCore.relX, this.y + 20, canvas.width * 0.6, canvas.height * 0.7));
+            enemyBullets.push(new EnemyBullet(this.x + this.rightCore.relX, this.y + 20, canvas.width * 0.6, canvas.height * 0.7, 2.0));
           }
         } else {
-          // 二階段：雙聯殲滅重砲 (三向高爆光球)
-          enemyBullets.push(new EnemyBullet(this.x - 70, this.y + 35, canvas.width * 0.25, canvas.height * 0.7, 4.2, '#ff3300', 16));
-          enemyBullets.push(new EnemyBullet(this.x, this.y + 45, canvas.width * 0.5, canvas.height * 0.7, 5.0, '#ffaa00', 18));
-          enemyBullets.push(new EnemyBullet(this.x + 70, this.y + 35, canvas.width * 0.75, canvas.height * 0.7, 4.2, '#ff3300', 16));
+          // 二階段：雙聯殲滅重砲 (適度速度，給予玩家彈反或開盾反應空間)
+          enemyBullets.push(new EnemyBullet(this.x - 70, this.y + 35, canvas.width * 0.25, canvas.height * 0.7, 2.6, '#ff3300', 15));
+          enemyBullets.push(new EnemyBullet(this.x, this.y + 45, canvas.width * 0.5, canvas.height * 0.7, 3.0, '#ffaa00', 16));
+          enemyBullets.push(new EnemyBullet(this.x + 70, this.y + 35, canvas.width * 0.75, canvas.height * 0.7, 2.6, '#ff3300', 15));
         }
       }
     }
@@ -1946,24 +1955,24 @@ class MechaArachnid {
         this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.28);
 
         this.shootTimer += dt * timeScale;
-        if (this.shootTimer > 2.0) {
+        if (this.shootTimer > 2.8) {
           this.shootTimer = 0;
           sfx.playBossLaser();
           for (let offset of [-60, 0, 60]) {
-            enemyBullets.push(new EnemyBullet(this.x, this.y + 15, this.x + offset, canvas.height * 0.7, 3.6, '#00ff88'));
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 15, this.x + offset, canvas.height * 0.7, 2.0, '#00ff88'));
           }
         }
       } else {
-        // 二階段：天啟狂暴態高速擺動
-        this.swingTime += dt * 3.4 * timeScale;
+        // 二階段：天啟狂暴態
+        this.swingTime += dt * 3.0 * timeScale;
         this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.35);
 
         this.shootTimer += dt * timeScale;
-        if (this.shootTimer > 1.3) {
+        if (this.shootTimer > 1.9) {
           this.shootTimer = 0;
           sfx.playBossLaser();
-          for (let offset of [-90, -45, 0, 45, 90]) {
-            enemyBullets.push(new EnemyBullet(this.x, this.y + 20, this.x + offset, canvas.height * 0.75, 4.4, '#ff00aa', 15));
+          for (let offset of [-60, -20, 20, 60]) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 20, this.x + offset, canvas.height * 0.75, 2.6, '#ff00aa', 15));
           }
         }
       }
@@ -2255,11 +2264,11 @@ class OuroborosCore {
         this.ringAngle2 -= 0.05 * timeScale;
 
         this.shootTimer += dt * timeScale;
-        if (this.shootTimer > 2.2) {
+        if (this.shootTimer > 3.0) {
           this.shootTimer = 0;
           sfx.playBossLaser();
           for (let ang of [-0.3, -0.1, 0.1, 0.3]) {
-            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 200, this.y + Math.cos(ang) * 200, 3.8, '#ff00aa'));
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 200, this.y + Math.cos(ang) * 200, 2.2, '#ff00aa'));
           }
         }
       } else {
@@ -2267,17 +2276,17 @@ class OuroborosCore {
         this.ringAngle1 += 0.08 * timeScale;
 
         this.shootTimer += dt * timeScale;
-        if (this.shootTimer > 1.4) {
+        if (this.shootTimer > 2.2) {
           this.shootTimer = 0;
           sfx.playBossLaser();
           for (let i = 0; i < 6; i++) {
             const a = this.ringAngle1 + (i * Math.PI) / 3;
-            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(a) * 220, this.y + Math.sin(a) * 220, 4.5, '#00ffff', 16));
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(a) * 220, this.y + Math.sin(a) * 220, 2.6, '#00ffff', 16));
           }
         }
 
         this.summonTimer += dt * timeScale;
-        if (this.summonTimer > 6.0 && enemies.length < 3) {
+        if (this.summonTimer > 8.5 && enemies.length < 2) {
           this.summonTimer = 0;
           enemies.push(new KamikazeDrone());
           spawnFloatingText('⚠️ MINION SUMMONED!', this.x, this.y + 45, '#ff0055');
@@ -2661,9 +2670,14 @@ function executeFire(originX, originY, targetX, targetY) {
   // 1. 音效、震動與光影
   if (isRailgun) {
     sfx.playRailgunBlast();
-    screenShake = 22;
-    flashOverlay.style.opacity = '1';
-    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 140);
+    screenShake = 24;
+    // 柔和深藍星雲暈環 (短暫 60ms)，絕不閃白遮擋巨型光束
+    flashOverlay.style.background = 'radial-gradient(circle, rgba(0, 140, 255, 0.45) 0%, rgba(0, 60, 255, 0.2) 60%, rgba(0,0,0,0) 80%)';
+    flashOverlay.style.opacity = '0.7';
+    setTimeout(() => { 
+      flashOverlay.style.opacity = '0'; 
+      flashOverlay.style.background = '#fff';
+    }, 60);
     if (navigator.vibrate) navigator.vibrate([100, 30, 80]);
   } else if (isMinigun) {
     sfx.playMinigunShot();
@@ -2700,12 +2714,12 @@ function executeFire(originX, originY, targetX, targetY) {
   // 3. 構建射擊彈道
   const pellets = [];
   if (isRailgun) {
-    // ⚡ 巨型貫穿光柱：直通螢幕遠端
+    // ⚡ 巨型貫穿深藍等離子光柱：直通螢幕遠端
     const angle = Math.atan2(targetY - originY, targetX - originX);
     pellets.push({
-      tx: originX + Math.cos(angle) * 1200,
-      ty: originY + Math.sin(angle) * 1200,
-      color: '#00ffff',
+      tx: originX + Math.cos(angle) * 1400,
+      ty: originY + Math.sin(angle) * 1400,
+      color: '#0055ff', // 深邃高能鈷藍色
       isRailgun: true
     });
   } else if (isMinigun) {
@@ -2746,7 +2760,9 @@ function executeFire(originX, originY, targetX, targetY) {
       x1: originX, y1: originY,
       x2: p.tx, y2: p.ty,
       color: p.color,
-      width: isRailgun ? 16 : (isShotgun ? 6 : 4),
+      width: isRailgun ? 38 : (isShotgun ? 6 : (isMinigun ? 3 : 4)),
+      isRailgun: isRailgun,
+      decay: isRailgun ? 0.022 : 0.12, // 軌道砲在畫面上持久停留約 0.7 秒！
       alpha: 1
     });
 
@@ -2820,12 +2836,12 @@ function executeFire(originX, originY, targetX, targetY) {
       if (b.isParried) continue;
 
       const bulletHit = isRailgun 
-        ? (distToSegment({ x: originX, y: originY }, { x: p.tx, y: p.ty }, { x: b.x, y: b.y }) < b.radius + 30)
-        : (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 22);
+        ? (distToSegment({ x: originX, y: originY }, { x: p.tx, y: p.ty }, { x: b.x, y: b.y }) < b.radius + 38)
+        : (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 32);
 
       if (bulletHit) {
-        // ⚡ 判定是否觸發完美彈反 (光彈逼近防線時迎面擊碎)
-        if (b.y > canvas.height * 0.30) {
+        // ⚡ 判定是否觸發完美彈反 (光彈逼近防線時迎面擊碎，擴大高度判定區間)
+        if (b.y > canvas.height * 0.24) {
           b.isParried = true;
           // 反向追蹤衝擊 BOSS 或敵人
           const targetEnemy = currentBoss || enemies[0];
@@ -3134,13 +3150,15 @@ function gameLoop() {
       comboElem.classList.remove('active');
     }
 
-    if (enemies.length < 4 && Date.now() > nextSpawnTime) {
-      if (Math.random() < 0.35) {
+    // 當有 BOSS 在場時，大幅減少小怪刷新，讓手機玩家專注於 BOSS 弱點與彈反，不再手忙腳亂
+    const maxEnemies = currentBoss ? 1 : 4;
+    if (enemies.length < maxEnemies && Date.now() > nextSpawnTime) {
+      if (Math.random() < 0.35 && !currentBoss) {
         enemies.push(new KamikazeDrone());
       } else {
         enemies.push(new NormalDrone());
       }
-      nextSpawnTime = Date.now() + 1600 + Math.random() * 1200;
+      nextSpawnTime = Date.now() + (currentBoss ? 3600 : 2000) + Math.random() * 1200;
     }
 
     // 更新敵人
@@ -3253,24 +3271,71 @@ function gameLoop() {
     if (bolt.alpha <= 0) lightningBolts.splice(i, 1);
   }
 
-  // 5. 繪製雷射光束
+  // 5. 繪製雷射光束 (深藍色巨型軌道砲等離子能量柱)
   for (let i = laserBeams.length - 1; i >= 0; i--) {
     const beam = laserBeams[i];
     ctx.save();
-    ctx.strokeStyle = beam.color || '#00f0ff';
-    ctx.lineWidth = beam.width || 4;
-    ctx.shadowColor = ctx.strokeStyle;
-    ctx.shadowBlur = (beam.width && beam.width > 10) ? 24 : 12;
-    ctx.beginPath();
-    ctx.moveTo(beam.x1, beam.y1);
-    ctx.lineTo(beam.x2, beam.y2);
-    ctx.stroke();
+    ctx.globalAlpha = Math.max(0, beam.alpha);
 
-    // 軌道砲高能貫穿光束：內部白色高溫雷射芯
-    if (beam.width && beam.width > 10) {
+    if (beam.isRailgun) {
+      // ⚡ 巨型深藍色電漿電磁光束 (多重深藍/鈷藍星雲層次，震撼呈現)
+      // 1. 最外層深藍星雲光暈 (52px)
+      ctx.strokeStyle = 'rgba(0, 60, 255, 0.45)';
+      ctx.lineWidth = 52 * Math.sqrt(beam.alpha);
+      ctx.shadowColor = '#0044ff';
+      ctx.shadowBlur = 38;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+
+      // 2. 中層熾熱鈷藍等離子柱 (26px)
+      ctx.strokeStyle = '#0088ff';
+      ctx.lineWidth = 26 * Math.sqrt(beam.alpha);
+      ctx.shadowColor = '#00b4ff';
+      ctx.shadowBlur = 22;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+
+      // 3. 內層高能天藍雷射 (12px)
+      ctx.strokeStyle = '#66ccff';
+      ctx.lineWidth = 12 * Math.sqrt(beam.alpha);
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+
+      // 4. 核心高溫熾白電漿芯 (5px)
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = beam.width * 0.35;
-      ctx.shadowBlur = 8;
+      ctx.lineWidth = 5 * Math.sqrt(beam.alpha);
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+
+      // 5. 躍動的電漿閃電電弧
+      const arcSegs = 6;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let s = 0; s <= arcSegs; s++) {
+        const t = s / arcSegs;
+        const jitter = (s > 0 && s < arcSegs) ? (Math.random() - 0.5) * 30 : 0;
+        const lx = beam.x1 + (beam.x2 - beam.x1) * t + jitter;
+        const ly = beam.y1 + (beam.y2 - beam.y1) * t + jitter;
+        if (s === 0) ctx.moveTo(lx, ly);
+        else ctx.lineTo(lx, ly);
+      }
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = beam.color || '#00f0ff';
+      ctx.lineWidth = beam.width || 4;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 12;
       ctx.beginPath();
       ctx.moveTo(beam.x1, beam.y1);
       ctx.lineTo(beam.x2, beam.y2);
@@ -3278,7 +3343,7 @@ function gameLoop() {
     }
     ctx.restore();
 
-    beam.alpha -= 0.12;
+    beam.alpha -= (beam.decay || 0.12);
     if (beam.alpha <= 0) laserBeams.splice(i, 1);
   }
 
@@ -3359,9 +3424,9 @@ function gameLoop() {
       const orbRadius = 6 + chargeRatio * 16 + Math.sin(now * 0.02) * 2;
       ctx.beginPath();
       ctx.arc(muzzlePos.x, muzzlePos.y, orbRadius, 0, Math.PI * 2);
-      ctx.fillStyle = isRailgunCharged ? 'rgba(0, 255, 255, 0.85)' : 'rgba(0, 220, 255, 0.45)';
-      ctx.shadowColor = '#00ffff';
-      ctx.shadowBlur = 20 + chargeRatio * 15;
+      ctx.fillStyle = isRailgunCharged ? 'rgba(0, 100, 255, 0.92)' : 'rgba(0, 140, 255, 0.55)';
+      ctx.shadowColor = '#0055ff';
+      ctx.shadowBlur = 24 + chargeRatio * 18;
       ctx.fill();
 
       // 核心高溫白光
@@ -3478,7 +3543,7 @@ function gameLoop() {
     } else if (currentWeapon === 'MINIGUN') {
       themeColor = '#ff3b30';
     } else if (currentWeapon === 'RAILGUN' || (railgunChargeTimer > 0.25)) {
-      themeColor = isRailgunCharged ? '#00ffff' : '#33ccff';
+      themeColor = isRailgunCharged ? '#0066ff' : '#00aaff';
     } else {
       themeColor = isThumbReady ? '#00ff88' : '#00f0ff';
     }
@@ -3486,7 +3551,7 @@ function gameLoop() {
     ctx.strokeStyle = themeColor;
     ctx.lineWidth = currentWeapon === 'RAILGUN' ? 3.5 : 2.5;
     ctx.shadowColor = themeColor;
-    ctx.shadowBlur = isRailgunCharged ? 22 : 12;
+    ctx.shadowBlur = isRailgunCharged ? 24 : 12;
 
     const crosshairRadius = currentWeapon === 'SHOTGUN' ? 32 : (currentWeapon === 'MINIGUN' ? 20 : 24);
 
@@ -3494,12 +3559,14 @@ function gameLoop() {
     ctx.arc(0, 0, crosshairRadius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // ⚡ 軌道砲蓄力環進度條
+    // ⚡ 軌道砲深藍高能蓄力環進度條
     if (railgunChargeTimer > 0.25) {
       const chargeRatio = Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85);
       ctx.save();
-      ctx.strokeStyle = isRailgunCharged ? '#00ffff' : '#ffdd00';
-      ctx.lineWidth = 4;
+      ctx.strokeStyle = isRailgunCharged ? '#0055ff' : '#00bbff';
+      ctx.lineWidth = 4.5;
+      ctx.shadowColor = '#0055ff';
+      ctx.shadowBlur = 15;
       ctx.beginPath();
       ctx.arc(0, 0, crosshairRadius + 7, -Math.PI / 2, -Math.PI / 2 + chargeRatio * Math.PI * 2);
       ctx.stroke();
