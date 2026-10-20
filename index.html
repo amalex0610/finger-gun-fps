@@ -421,10 +421,10 @@
       擊破 16 隻敵艦即觸發母艦空襲降臨！
     </div>
     <div class="gesture-guide">
-      👉 <b>食指微扣開火 (推薦)</b>：食指輕扣一下即開火，穩健絕不走火！<br>
-      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發覆蓋<br>
-      🛸 <b>母艦 BOSS 戰</b>：先轟碎左右兩翼核心，再暴擊中央弱點！<br>
-      🎁 <b>射擊拾取晶片</b>：打爆浮動晶片箱，固定 4 格無遮擋升級！
+      👉 <b>單指手槍</b>：食指伸直瞄準，向下扣動大拇指開火！<br>
+      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發擴散！<br>
+      🛸 <b>母艦 BOSS 戰</b>：擊破 16 隻天降母艦，先破兩翼再炸核心！<br>
+      🎁 <b>射擊拾取晶片</b>：瞄準空中發光晶片開槍，直接升級！
     </div>
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始戰鬥</button>
   </div>
@@ -830,17 +830,16 @@ const activePerks = {
   nanoShieldHp: 0      // 🛡️ 奈米護盾當前數值
 };
 
-// 手勢與武器狀態 (拒絕靜態誤射 · 真實動態扳機)
+// 手勢與武器狀態 (純粹大拇指動態扳機 · 拒絕重疊走火)
 let currentWeapon = 'PISTOL';
 let isGunDetected = false;
-let isTriggerReady = true; // 食指/拇指扳機上膛狀態
+let isThumbReady = false; // 大拇指上膛狀態 (立起為 Ready，扣下後必須重新立起才能再開火)
 let lastFireTime = 0;
-let lastValidGunTime = 0; // 姿態記憶緩衝時間戳
+let lastValidGunTime = 0; // 姿態記憶緩衝時間戳 (扣動重疊時絕不閃退)
 let gunCrosshair = { x: -100, y: -100, targetX: -100, targetY: -100, active: false };
 let muzzlePos = { x: -100, y: -100 };
 let currentHandLandmarks = null;
 let prevThumbDist = 0.5;
-let prevIndexRatio = 1.5;
 
 // 特效實體池
 let particles = [];
@@ -1724,7 +1723,7 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // ==========================================
-// 6. MediaPipe 手勢辨識 (純動態扣扳機 · 徹底杜絕重疊誤射)
+// 6. MediaPipe 手勢辨識 (純大拇指動態扳機 · 重疊絕不走火)
 // ==========================================
 function onResults(results) {
   if (isGameOver) return;
@@ -1753,24 +1752,21 @@ function onResults(results) {
   const palmSize = dist(0, 5) || 100;
   if (palmSize < 25) return;
 
-  // 1. 食指伸展指標 (8指尖到5根部 相對 6關節到5根部)
+  // 1. 食指伸展判定 (持槍姿態)
   const indexLen = dist(8, 5);
   const indexBase = dist(6, 5);
-  const indexRatio = indexLen / indexBase;
-
-  // 只要食指有大致伸出，即判定為持槍姿態 (加上記憶緩衝)
-  const isHoldingGun = indexRatio > 1.2 || (now - lastValidGunTime < 400);
+  const isIndexStraight = (indexLen > indexBase * 1.3) || (dist(8, 0) > dist(6, 0) * 1.15) || (now - lastValidGunTime < 400);
 
   // 2. 中指伸展判定 (手槍 VS 霰彈槍)
   const isMiddleStraight = dist(12, 9) > dist(10, 9) * 1.35 && dist(12, 0) > dist(8, 0) * 0.75;
 
-  if (isHoldingGun && isMiddleStraight) {
+  if (isIndexStraight && isMiddleStraight) {
     currentWeapon = 'SHOTGUN';
-  } else if (isHoldingGun) {
+  } else if (isIndexStraight) {
     currentWeapon = 'PISTOL';
   }
 
-  if (isHoldingGun) {
+  if (isIndexStraight) {
     isGunDetected = true;
     lastValidGunTime = now;
     gunCrosshair.active = true;
@@ -1784,31 +1780,24 @@ function onResults(results) {
     gunCrosshair.targetX = pts[8].x + (dirX / dirLen) * 140;
     gunCrosshair.targetY = pts[8].y + (dirY / dirLen) * 140;
 
-    // 3. 純動態扣扳機判定 (不再使用任何靜態重疊判定，徹底杜絕走火！)
-    // (A) 食指指尖扣動 (Trigger Pull)：伸直為上膛，指尖扣一下開火！
-    const indexNod = prevIndexRatio - indexRatio; // 食指急速彎曲的差值
-    prevIndexRatio = indexRatio;
-
-    // (B) 拇指急速下壓動態
+    // 3. 純大拇指動態扣扳機邏輯 (返璞歸真，重疊不走火)
+    // 計算拇指尖 (4) 到食指根 (5) 的距離
     const thumbDist = dist(4, 5) / palmSize;
-    const thumbSpeed = prevThumbDist - thumbDist;
+    const thumbSpeed = prevThumbDist - thumbDist; // 拇指向下扣的速度
     prevThumbDist = thumbDist;
 
-    // 上膛 (Ready) 條件：食指伸直
-    if (indexRatio > 1.45 || thumbDist > 0.44) {
-      isTriggerReady = true;
+    // (A) 上膛 (Ready) 條件：大拇指必須明確立起/張開，才算上膛
+    if (thumbDist > 0.45) {
+      isThumbReady = true;
       statusDot.className = 'status-dot ready';
       statusText.innerText = currentWeapon === 'SHOTGUN' 
-        ? '💥 霰彈就緒！彎一下食指(或扣拇指)開火！' 
-        : '🎯 瞄準中！微扣食指(或壓拇指)即可射擊！';
-    }
-
-    // 開火 (Fire) 條件：必須處於 Ready 且檢測到「食指主動扣下」或「拇指劇烈下壓」
-    const isIndexPulling = isTriggerReady && (indexRatio < 1.26 || indexNod > 0.12);
-    const isThumbSlapping = isTriggerReady && (thumbSpeed > 0.08);
-
-    if (isIndexPulling || isThumbSlapping) {
-      isTriggerReady = false; // 立即消耗上膛狀態，避免連射走火
+        ? '💥 霰彈就緒！向下扣動大拇指開火！' 
+        : '🎯 瞄準中！向下扣動大拇指開火！';
+    } 
+    // (B) 開火 (Fire) 條件：
+    // 必須是在「已上膛 (isThumbReady)」狀態下，玩家「主動將拇指往下扣下」
+    else if (isThumbReady && (thumbDist < 0.36 || thumbSpeed > 0.065)) {
+      isThumbReady = false; // 消耗上膛狀態！扣下後維持重疊絕對不再開火，直到重新立起拇指
       statusDot.className = 'status-dot';
       statusText.innerText = '💥 FIRE!! 開火！';
       executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
@@ -2053,7 +2042,7 @@ function gameLoop() {
     if (currentWeapon === 'SHOTGUN') ctx.arc(pts[12].x, pts[12].y, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = isTriggerReady ? '#00ff88' : '#ff4444';
+    ctx.fillStyle = isThumbReady ? '#00ff88' : '#ff4444';
     ctx.beginPath();
     ctx.arc(pts[4].x, pts[4].y, 6, 0, Math.PI * 2);
     ctx.fill();
@@ -2076,8 +2065,8 @@ function gameLoop() {
     ctx.translate(cx, cy);
 
     const themeColor = currentWeapon === 'SHOTGUN' 
-      ? (isTriggerReady ? '#ffaa00' : '#ff5500') 
-      : (isTriggerReady ? '#00ff88' : '#00f0ff');
+      ? (isThumbReady ? '#ffaa00' : '#ff5500') 
+      : (isThumbReady ? '#00ff88' : '#00f0ff');
 
     ctx.strokeStyle = themeColor;
     ctx.lineWidth = 2.5;
@@ -2111,7 +2100,7 @@ function gameLoop() {
     ctx.font = '900 11px sans-serif';
     ctx.textAlign = 'center';
     const weaponLabel = currentWeapon === 'SHOTGUN' ? '💥 SHOTGUN' : '🔫 PISTOL';
-    const statusLabel = isTriggerReady ? 'READY' : 'AIM';
+    const statusLabel = isThumbReady ? 'READY' : 'AIM';
     ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, currentWeapon === 'SHOTGUN' ? 48 : 38);
 
     ctx.restore();
