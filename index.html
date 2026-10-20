@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR 6.1 | 傳奇 BOSS 雙命二階狂暴變身 · 弱點機制全面進化</title>
+  <title>Cyber Finger-Gun AR 7.0 | 雙重防禦體系：張掌全息護盾 × 完美彈反</title>
   <style>
     * {
       box-sizing: border-box;
@@ -127,7 +127,7 @@
     }
 
     .hp-bar-bg {
-      width: 65px;
+      width: 50px;
       height: 8px;
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
@@ -140,6 +140,23 @@
       background: linear-gradient(90deg, #ff0055, #00ff88);
       border-radius: 4px;
       transition: width 0.2s ease-out;
+    }
+
+    .shield-bar-bg {
+      width: 44px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+    }
+
+    .shield-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #00bfff, #00ffaa);
+      border-radius: 4px;
+      transition: width 0.15s ease-out;
     }
 
     .score-display {
@@ -384,8 +401,12 @@
       <!-- 左上方：微型血條與分數 -->
       <div class="left-status-group">
         <div class="hp-and-score-row">
-          <div class="hp-bar-bg">
+          <div class="hp-bar-bg" title="玩家生命值">
             <div id="hp-bar-fill" class="hp-bar-fill"></div>
+          </div>
+          <span style="font-size: 11px; margin-left: 2px;">🛡️</span>
+          <div class="shield-bar-bg" title="全息護盾能量 (張手 ✋ 展開)">
+            <div id="shield-bar-fill" class="shield-bar-fill"></div>
           </div>
           <span id="score" class="score-display">0</span>
           <span id="combo" class="combo-badge">3x</span>
@@ -415,16 +436,15 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 6.1</div>
+    <div class="modal-title">CYBER FINGER GUN 7.0</div>
     <div class="modal-desc">
-      極簡實景 FPS × 四大神兵極限火力 × 三大傳奇 BOSS 雙命二階變身！<br>
-      純拇指動態扳機 · 弱點機制全面進化 · 雙血條狂暴二階超凡進化！
+      極簡實景 FPS × 四大神兵 × 雙重防禦體系 × 三大 BOSS 二階狂暴變身！<br>
+      攻守兼備超凡手感！新增張掌全息護盾與隻狼式完美彈反！
     </div>
     <div class="gesture-guide">
-      🔫 <b>單指手槍</b>：食指瞄準，大拇指單次下扣開火！<br>
-      🌪️ <b>加特林機槍</b>：扣下拇指<b>按住不放</b>，85ms 極速暴風掃射！<br>
-      ⚡ <b>高能軌道砲</b>：大拇指<b>立起瞄準 1 秒蓄滿</b>，下扣發射貫穿整條螢幕！<br>
-      💥 <b>雙指霰彈槍</b>：食指＋中指併攏瞄準，扇形 5 發大範圍覆蓋！<br>
+      👉 <b>四大神兵</b>：單發手槍 / 扣住不放加特林 / 立起 1 秒軌道砲 / 雙指霰彈<br>
+      ✋ <b>張掌全息護盾</b>：危急時<b>五指全部張開 ✋</b>，展開蜂巢護盾抵擋傷害！<br>
+      ⚡ <b>隻狼式完美彈反</b>：敵方光彈即將砸臉時<b>開槍迎面擊爆</b>，觸發打鐵反彈！黃金穿甲光彈反噬敵機與 BOSS！<br>
       👑 <b>三大傳奇 BOSS 雙命二階狂暴形態</b>：<br>
       &nbsp;&nbsp;1. 🛸 <b>巡洋母艦</b>：破兩翼方可攻核心 ➔ 雙重重砲「滅世殲滅者」！<br>
       &nbsp;&nbsp;2. 🕷️ <b>機械巨蛛</b>：複眼絕對無敵！必先打斷4條蛛腿 ➔ 六刃鐮刀「天啟災厄巨蛛」！<br>
@@ -736,6 +756,79 @@ class SoundSynthesizer {
     osc.stop(now + 0.12);
   }
 
+  // 🛡️ 展開全息護盾音效
+  playShieldDeploy() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(750, now + 0.15);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.18);
+  }
+
+  // 🛡️ 護盾吸收抵擋攻擊音效
+  playShieldAbsorb() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.18);
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+    this.playNoisePunch(0.06, 0.35);
+  }
+
+  // 💥 護盾過熱崩潰音效
+  playShieldBreak() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.35);
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.38);
+    this.playNoisePunch(0.2, 0.75);
+  }
+
+  // ⚡ 隻狼式完美彈反打鐵音效 (CLANG!!)
+  playParryClang() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    for (let f of [2400, 1600, 880]) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.25);
+      gain.gain.setValueAtTime(0.6, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.28);
+    }
+    this.playNoisePunch(0.05, 0.4);
+  }
+
   // ⚡ BOSS 二階段狂暴變身史詩咆哮音效
   playBossTransform() {
     if (!this.ctx) return;
@@ -974,6 +1067,13 @@ let gunCrosshair = { x: -100, y: -100, targetX: -100, targetY: -100, active: fal
 let muzzlePos = { x: -100, y: -100 };
 let currentHandLandmarks = null;
 let prevThumbDist = 0.5;
+
+// 雙重防禦體系：全息護盾 (方案 A)
+let shieldEnergy = 100;
+const maxShieldEnergy = 100;
+let isShieldActive = false;
+let shieldBreakCooldown = 0;
+let shieldAnimTime = 0;
 
 // 特效實體池
 let particles = [];
@@ -1376,6 +1476,7 @@ class EnemyBullet {
     this.vx = (dx / d) * speed;
     this.vy = (dy / d) * speed;
     this.isDead = false;
+    this.isParried = false; // ⚡ 隻狼式完美彈反狀態
   }
 
   update(dt, timeScale) {
@@ -1385,6 +1486,41 @@ class EnemyBullet {
     // 飛出螢幕四方邊界自動銷毀
     if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
       this.isDead = true;
+      return;
+    }
+
+    // ⚡ 若被玩家完美彈反：化身黃金穿甲光彈，衝向敵人與 BOSS！
+    if (this.isParried) {
+      // 檢測撞擊一般敵人
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (Math.hypot(this.x - e.x, this.y - e.y) < e.radius + this.radius) {
+          e.hp -= 22; // 彈反致命傷害
+          sfx.playExplosion();
+          spawnExplosion(this.x, this.y, '#ffee00');
+          this.isDead = true;
+          if (e.hp <= 0) {
+            spawnFloatingText('PARRY KILL! +800', e.x, e.y, '#ffee00');
+            enemies.splice(i, 1);
+            score += 800;
+            killCount++;
+            scoreElem.innerText = score;
+          }
+          return;
+        }
+      }
+
+      // 檢測撞擊傳奇 BOSS
+      if (currentBoss && currentBoss.y > 0) {
+        if (Math.hypot(this.x - currentBoss.x, this.y - currentBoss.y) < 70) {
+          currentBoss.onHit(this.x, this.y, 16); // 彈反穿甲重創 BOSS！
+          sfx.playExplosion();
+          spawnExplosion(this.x, this.y, '#ffee00');
+          spawnFloatingText('⚡ PARRY COUNTER! -16', currentBoss.x, currentBoss.y, '#ffea00');
+          this.isDead = true;
+          return;
+        }
+      }
       return;
     }
 
@@ -1399,16 +1535,31 @@ class EnemyBullet {
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.fillStyle = this.color;
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ffea00';
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
-    ctx.fill();
+    if (this.isParried) {
+      // 黃金彈反光球特寫
+      ctx.fillStyle = '#ffea00';
+      ctx.shadowColor = '#ffee00';
+      ctx.shadowBlur = 24;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius + 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffea00';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 }
@@ -2320,6 +2471,33 @@ class OuroborosCore {
 
 function applyDamage(amount) {
   if (isGameOver) return;
+
+  // 🛡️ 方案 A：全息蜂巢護盾吸收抵擋
+  if (isShieldActive && shieldEnergy > 0) {
+    shieldEnergy = Math.max(0, shieldEnergy - amount * 1.15);
+    sfx.playShieldAbsorb();
+    screenShake = 6;
+    flashOverlay.style.background = 'radial-gradient(circle, rgba(0,255,255,0.4) 0%, rgba(0,0,0,0) 70%)';
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { 
+      flashOverlay.style.opacity = '0'; 
+      flashOverlay.style.background = '#fff';
+    }, 100);
+
+    spawnFloatingText('🛡️ BLOCKED!', canvas.width * 0.5, canvas.height * 0.65, '#00ffff');
+    updateShieldUI();
+
+    // 護盾過載崩潰
+    if (shieldEnergy <= 0) {
+      isShieldActive = false;
+      shieldBreakCooldown = 2.8;
+      sfx.playShieldBreak();
+      screenShake = 16;
+      spawnFloatingText('💥 SHIELD OVERHEAT!', canvas.width * 0.5, canvas.height * 0.65, '#ff0055');
+    }
+    return;
+  }
+
   currentHp = Math.max(0, currentHp - amount);
   updateHpUI();
 
@@ -2337,6 +2515,17 @@ function updateHpUI() {
   if (pct < 30) hpBarFill.style.background = '#ff0033';
   else if (pct < 60) hpBarFill.style.background = '#ffaa00';
   else hpBarFill.style.background = 'linear-gradient(90deg, #ff0055, #00ff88)';
+}
+
+function updateShieldUI() {
+  const shieldFill = document.getElementById('shield-bar-fill');
+  if (shieldFill) {
+    const pct = Math.max(0, (shieldEnergy / maxShieldEnergy) * 100);
+    shieldFill.style.width = pct + '%';
+    if (shieldBreakCooldown > 0) shieldFill.style.background = '#ff0033';
+    else if (isShieldActive) shieldFill.style.background = '#00ffff';
+    else shieldFill.style.background = 'linear-gradient(90deg, #00bfff, #00ffaa)';
+  }
 }
 
 function triggerGameOver() {
@@ -2376,6 +2565,11 @@ function restartGame() {
   bulletTimeOverlay.style.opacity = '0';
   sfx.isBulletTime = false;
   sfx.stopRailgunHum();
+
+  shieldEnergy = 100;
+  isShieldActive = false;
+  shieldBreakCooldown = 0;
+  updateShieldUI();
 
   currentWeapon = 'PISTOL';
   railgunChargeTimer = 0;
@@ -2620,20 +2814,46 @@ function executeFire(originX, originY, targetX, targetY) {
       }
     }
 
-    // 5. 擊落敵方能量光彈
+    // 5. 擊落敵方能量光彈 / 觸發隻狼式完美彈反 (Parry)
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const b = enemyBullets[i];
+      if (b.isParried) continue;
+
       const bulletHit = isRailgun 
         ? (distToSegment({ x: originX, y: originY }, { x: p.tx, y: p.ty }, { x: b.x, y: b.y }) < b.radius + 30)
-        : (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 20);
+        : (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 22);
 
       if (bulletHit) {
-        sfx.playHitSound();
-        spawnExplosion(b.x, b.y, '#00f0ff');
-        enemyBullets.splice(i, 1);
-        score += 50;
-        scoreElem.innerText = score;
-        spawnFloatingText('INTERCEPTED! +50', b.x, b.y, '#00f0ff');
+        // ⚡ 判定是否觸發完美彈反 (光彈逼近防線時迎面擊碎)
+        if (b.y > canvas.height * 0.30) {
+          b.isParried = true;
+          // 反向追蹤衝擊 BOSS 或敵人
+          const targetEnemy = currentBoss || enemies[0];
+          const aimX = targetEnemy ? targetEnemy.x : b.x;
+          const aimY = targetEnemy ? targetEnemy.y : 0;
+          const dx = aimX - b.x;
+          const dy = aimY - b.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const speed = 12.0;
+          b.vx = (dx / dist) * speed;
+          b.vy = (dy / dist) * speed;
+          b.radius = 18;
+
+          sfx.playParryClang();
+          screenShake = 16;
+          activePerks.bulletTimeTimer = Math.max(activePerks.bulletTimeTimer, 0.2); // 0.2s 隻狼式打鐵頓挫
+          spawnExplosion(b.x, b.y, '#ffee00');
+          spawnFloatingText('⚡ PARRY DEFLECTION! ⚡', b.x, b.y, '#ffea00');
+          score += 400;
+          scoreElem.innerText = score;
+        } else {
+          sfx.playHitSound();
+          spawnExplosion(b.x, b.y, '#00f0ff');
+          enemyBullets.splice(i, 1);
+          score += 50;
+          scoreElem.innerText = score;
+          spawnFloatingText('INTERCEPTED! +50', b.x, b.y, '#00f0ff');
+        }
         if (!isRailgun) break;
       }
     }
@@ -2675,6 +2895,7 @@ function onResults(results) {
     if (now - lastValidGunTime > 400) {
       isGunDetected = false;
       gunCrosshair.active = false;
+      isShieldActive = false;
       currentHandLandmarks = null;
       statusDot.className = 'status-dot';
       statusText.innerText = '尋找手部中... 請將手伸入鏡頭 👉';
@@ -2701,6 +2922,41 @@ function onResults(results) {
   const dist = (i, j) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
   const palmSize = dist(0, 5) || 100;
   if (palmSize < 25) return;
+
+  // 0. 手掌張開判定 (✋ 方案 A：展開全息蜂巢護盾)
+  // 食指、中指、無名指、小指同時伸展 -> 判定為五指全張防禦姿態
+  const isIndexExt = dist(8, 0) > dist(6, 0) * 1.15;
+  const isMiddleExt = dist(12, 0) > dist(10, 0) * 1.15;
+  const isRingExt = dist(16, 0) > dist(14, 0) * 1.15;
+  const isPinkyExt = dist(20, 0) > dist(18, 0) * 1.15;
+  const isOpenPalm = isIndexExt && isMiddleExt && isRingExt && isPinkyExt;
+
+  if (isOpenPalm) {
+    if (shieldBreakCooldown > 0) {
+      isShieldActive = false;
+      gunCrosshair.active = false;
+      statusDot.className = 'status-dot';
+      statusText.innerText = `⚠️ 護盾過熱冷卻中 (${shieldBreakCooldown.toFixed(1)}s)...`;
+    } else if (shieldEnergy > 5) {
+      if (!isShieldActive) {
+        sfx.playShieldDeploy();
+      }
+      isShieldActive = true;
+      gunCrosshair.active = false;
+      sfx.stopRailgunHum();
+      railgunChargeTimer = 0;
+      isRailgunCharged = false;
+      thumbDownTimer = 0;
+      canTriggerAutofire = false;
+      isThumbReady = false;
+      lastValidGunTime = now;
+      statusDot.className = 'status-dot ready';
+      statusText.innerText = `🛡️ 全息蜂巢盾防禦中！(能量: ${Math.floor(shieldEnergy)}%)`;
+    }
+    return;
+  } else {
+    isShieldActive = false;
+  }
 
   // 1. 食指伸展判定 (持槍姿態)
   const indexLen = dist(8, 5);
@@ -2841,6 +3097,17 @@ function gameLoop() {
   const now = performance.now();
   const dt = (now - lastTime) / 1000;
   lastTime = now;
+
+  // 🛡️ 護盾充能與過載冷卻計算
+  if (!isShieldActive) {
+    if (shieldBreakCooldown > 0) {
+      shieldBreakCooldown -= dt;
+      if (shieldBreakCooldown < 0) shieldBreakCooldown = 0;
+    } else {
+      shieldEnergy = Math.min(maxShieldEnergy, shieldEnergy + 30 * dt);
+    }
+  }
+  updateShieldUI();
 
   // ⏱️ 子彈時間倒數計算
   let timeScale = 1.0;
@@ -3126,6 +3393,70 @@ function gameLoop() {
     ctx.restore();
   }
 
+  // 8.5 繪製全息蜂巢護盾 (方案 A: Open Palm Shield)
+  if (isShieldActive && currentHandLandmarks) {
+    const palmX = currentHandLandmarks[9].x;
+    const palmY = currentHandLandmarks[9].y;
+    shieldAnimTime += dt * 3.5;
+
+    ctx.save();
+    ctx.translate(palmX, palmY);
+
+    // 外圍脈動青藍色光暈
+    const shieldR = 74 + Math.sin(shieldAnimTime) * 3;
+    const grad = ctx.createRadialGradient(0, 0, 15, 0, 0, shieldR + 25);
+    grad.addColorStop(0, 'rgba(0, 240, 255, 0.45)');
+    grad.addColorStop(0.7, 'rgba(0, 255, 180, 0.22)');
+    grad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldR + 25, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 蜂巢六角晶格矩陣
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 18;
+
+    // 中心六角晶格
+    drawHexShieldCell(ctx, 0, 0, 23);
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.35)';
+    ctx.fill();
+    ctx.stroke();
+
+    // 環繞 6 個相鄰晶格
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      const hx = Math.cos(a) * 40;
+      const hy = Math.sin(a) * 40;
+      drawHexShieldCell(ctx, hx, hy, 22);
+      ctx.fillStyle = (i % 2 === 0) ? 'rgba(0, 255, 200, 0.25)' : 'rgba(0, 200, 255, 0.2)';
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 外層旋轉科技防護刻度環
+    ctx.save();
+    ctx.rotate(shieldAnimTime * 0.35);
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 8]);
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldR + 8, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // 護盾即時數值標籤
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#00ffff';
+    ctx.font = '900 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`🛡️ HOLO-SHIELD ${Math.floor(shieldEnergy)}%`, 0, shieldR + 28);
+
+    ctx.restore();
+  }
+
   // 9. 繪製四大神兵專屬動態準星 (帶武器微標籤，釋放頂部視野)
   if (gunCrosshair.active) {
     if (gunCrosshair.x === -100) {
@@ -3237,6 +3568,19 @@ function gameLoop() {
   ctx.restore();
 
   requestAnimationFrame(gameLoop);
+}
+
+// 蜂巢六角形晶格繪製工具
+function drawHexShieldCell(ctx, x, y, r) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3;
+    const px = x + Math.cos(a) * r;
+    const py = y + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
 }
 
 // ==========================================
