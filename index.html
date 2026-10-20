@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Cyber Finger-Gun AR | 實景手勢手槍 FPS</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050508;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang TC", sans-serif;
+      color: #fff;
+    }
+
+    #app-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* 隱藏的攝影機 video */
+    #webcam {
+      display: none;
+    }
+
+    /* 主繪圖 Canvas（相機影像 + 遊戲特效） */
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* 槍口火光閃光層 */
+    #flash-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255,230,150,0.5) 0%, rgba(255,100,0,0.2) 60%, rgba(0,0,0,0) 100%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.05s ease-out;
+    }
+
+    /* HUD 介面層 */
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 15, 30, 0.65);
+      backdrop-filter: blur(8px);
+      padding: 10px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
+    }
+
+    .score-box {
+      font-size: 20px;
+      font-weight: 800;
+      color: #00f0ff;
+      letter-spacing: 1px;
+    }
+
+    .score-value {
+      color: #ffdd00;
+      font-size: 26px;
+      margin-left: 6px;
+      text-shadow: 0 0 10px rgba(255, 221, 0, 0.8);
+    }
+
+    .combo-badge {
+      display: inline-block;
+      margin-left: 12px;
+      background: linear-gradient(135deg, #ff0055, #ff5500);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 900;
+      transform: scale(0);
+      transition: transform 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+    .combo-badge.active {
+      transform: scale(1);
+    }
+
+    .hud-controls {
+      pointer-events: auto;
+      display: flex;
+      gap: 10px;
+    }
+
+    .hud-btn {
+      background: rgba(20, 30, 50, 0.8);
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .hud-btn:active {
+      background: #00f0ff;
+      color: #000;
+    }
+
+    /* 手勢引導與狀態提示 */
+    .status-panel {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      padding: 10px 20px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff4444;
+      box-shadow: 0 0 8px #ff4444;
+    }
+    .status-dot.ready {
+      background: #00ff88;
+      box-shadow: 0 0 8px #00ff88;
+    }
+
+    /* 初始開始畫面遮罩 */
+    #start-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 18, 0.94);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 30px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #00f0ff, #ff007f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+      letter-spacing: 2px;
+    }
+
+    .modal-desc {
+      font-size: 15px;
+      color: #c0c6d8;
+      max-width: 360px;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .gesture-guide {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed rgba(0, 240, 255, 0.4);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 28px;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #9ef0ff;
+    }
+
+    .start-btn {
+      pointer-events: auto;
+      background: linear-gradient(135deg, #00f0ff, #0077ff);
+      color: #000;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 35px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .start-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+    }
+  </style>
+
+  <!-- 引入 Google MediaPipe Hands 核心庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+<div id="app-container">
+  <video id="webcam" playsinline></video>
+  <canvas id="game-canvas"></canvas>
+  <div id="flash-overlay"></div>
+
+  <!-- HUD 資訊列 -->
+  <div id="hud">
+    <div class="top-bar">
+      <div class="score-box">
+        SCORE<span id="score" class="score-value">0</span>
+        <span id="combo" class="combo-badge">3x COMBO</span>
+      </div>
+      <div class="hud-controls">
+        <button id="camera-flip-btn" class="hud-btn">切換前後鏡頭</button>
+      </div>
+    </div>
+
+    <div class="status-panel">
+      <div id="status-dot" class="status-dot"></div>
+      <span id="status-text">請將手伸入鏡頭 比出手槍姿勢 👉</span>
+    </div>
+  </div>
+
+  <!-- 啟動視窗 -->
+  <div id="start-modal">
+    <div class="modal-title">CYBER FINGER GUN</div>
+    <div class="modal-desc">
+      利用手機相機 + AI 即時骨骼辨識，直接將真實的手變成未來雷射手槍！
+    </div>
+    <div class="gesture-guide">
+      👉 <b>比出手槍</b>：食指伸直瞄準，其他手指握拳<br>
+      💥 <b>扣扳機開火</b>：大拇指往下扣一下即發射！<br>
+      🎯 <b>也可以點螢幕</b>：點擊畫面任意處即可強制射擊
+    </div>
+    <button id="start-btn" class="start-btn">允許相機並開始</button>
+  </div>
+</div>
+
+<script>
+// --- 音效合成器 (Web Audio API - 免下載任何外部音效檔) ---
+class SoundFx {
+  constructor() {
+    this.ctx = null;
+  }
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  // 逼真的重低音雷射手槍聲
+  playLaserPistol() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    // 振盪器（快速降頻產生啾砰聲）
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.16);
+
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.18);
+
+    // 加上白噪聲增加爆裂衝擊感 (Punch)
+    const bufferSize = this.ctx.sampleRate * 0.1;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const noiseFilter = this.ctx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.setValueAtTime(1000, now);
+    noiseFilter.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+
+    const noiseGain = this.ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.4, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(this.ctx.destination);
+    noise.start(now);
+  }
+
+  // 命中敵人的清脆叮聲 (Hit Marker)
+  playHitSound() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1200, now);
+    osc.frequency.setValueAtTime(1800, now + 0.04);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  }
+
+  // 擊碎無人機的爆炸聲
+  playExplosion() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const bufferSize = this.ctx.sampleRate * 0.35;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.08));
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(60, now + 0.3);
+
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.7, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start(now);
+  }
+}
+
+const sfx = new SoundFx();
+
+// --- 遊戲邏輯與渲染引擎 ---
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const videoElement = document.getElementById('webcam');
+const flashOverlay = document.getElementById('flash-overlay');
+const scoreElem = document.getElementById('score');
+const comboElem = document.getElementById('combo');
+const statusDot = document.getElementById('status-dot');
+const statusText = document.getElementById('status-text');
+
+let currentFacingMode = 'environment'; // 預設後置鏡頭，看真實房間
+let cameraInstance = null;
+let score = 0;
+let combo = 0;
+let lastHitTime = 0;
+
+// 手勢辨識狀態機
+let isGunDetected = false;
+let isThumbReady = false; // 拇指是否處於瞄準立起狀態
+let lastFireTime = 0;
+let gunCrosshair = { x: -100, y: -100, active: false };
+let muzzlePos = { x: -100, y: -100 };
+
+// 粒子、子彈與浮動數字系統
+let particles = [];
+let floatingTexts = [];
+let laserBeams = [];
+let screenShake = 0;
+
+// 敵人目標無人機列表
+let drones = [];
+let nextDroneSpawn = 0;
+
+// 自適應全螢幕解析度
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// --- 敵人無人機類別 ---
+class CyberDrone {
+  constructor() {
+    this.radius = 35 + Math.random() * 15;
+    // 從畫面四周飛入
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { // 上
+      this.x = Math.random() * canvas.width;
+      this.y = -50;
+    } else if (side === 1) { // 右
+      this.x = canvas.width + 50;
+      this.y = Math.random() * (canvas.height * 0.7);
+    } else if (side === 2) { // 下
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height + 50;
+    } else { // 左
+      this.x = -50;
+      this.y = Math.random() * (canvas.height * 0.7);
+    }
+
+    // 目標巡航點（畫面中偏上）
+    this.targetX = canvas.width * 0.2 + Math.random() * (canvas.width * 0.6);
+    this.targetY = canvas.height * 0.15 + Math.random() * (canvas.height * 0.45);
+    
+    this.hp = 1;
+    this.maxHp = 1;
+    this.angle = 0;
+    this.hoverOffset = Math.random() * Math.PI * 2;
+    this.isDead = false;
+  }
+
+  update(dt) {
+    // 平滑游動到目標位置
+    this.x += (this.targetX - this.x) * 0.04;
+    this.y += (this.targetY - this.y) * 0.04;
+    this.angle += 0.03;
+  }
+
+  draw(ctx) {
+    const hoverY = this.y + Math.sin(Date.now() * 0.005 + this.hoverOffset) * 8;
+
+    ctx.save();
+    ctx.translate(this.x, hoverY);
+
+    // 外層旋轉賽博瞄準外環
+    ctx.rotate(this.angle);
+    ctx.strokeStyle = '#ff0055';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([12, 8]);
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 內層發光核心
+    ctx.rotate(-this.angle * 2);
+    ctx.fillStyle = 'rgba(255, 0, 85, 0.25)';
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 核心光球
+    ctx.fillStyle = '#ff3366';
+    ctx.shadowColor = '#ff0055';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 警示文字
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TARGET', 0, -this.radius - 8);
+
+    ctx.restore();
+  }
+}
+
+// --- 爆炸碎片粒子 ---
+function spawnExplosion(x, y, color = '#ff0055') {
+  for (let i = 0; i < 28; i++) {
+    const speed = 3 + Math.random() * 8;
+    const ang = Math.random() * Math.PI * 2;
+    particles.push({
+      x: x,
+      y: y,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed - 2,
+      size: 4 + Math.random() * 6,
+      color: color,
+      alpha: 1,
+      decay: 0.02 + Math.random() * 0.02,
+      gravity: 0.15
+    });
+  }
+}
+
+// 飄動傷害文字
+function spawnFloatingText(text, x, y, color = '#ffdd00') {
+  floatingTexts.push({
+    text: text,
+    x: x,
+    y: y,
+    alpha: 1,
+    vy: -2.5,
+    color: color
+  });
+}
+
+// --- 射擊判定核心 ---
+function triggerShot(targetX, targetY) {
+  const now = Date.now();
+  if (now - lastFireTime < 180) return; // 180ms 開火冷卻防抖
+  lastFireTime = now;
+
+  // 1. 播放極致爽感音效
+  sfx.playLaserPistol();
+
+  // 2. 手機硬體振動 (Haptic Feedback)
+  if (navigator.vibrate) {
+    navigator.vibrate([35]);
+  }
+
+  // 3. 螢幕微晃動與槍口閃光
+  screenShake = 12;
+  flashOverlay.style.opacity = '1';
+  setTimeout(() => { flashOverlay.style.opacity = '0'; }, 60);
+
+  // 4. 雷射曳光彈
+  const startX = muzzlePos.x > 0 ? muzzlePos.x : canvas.width * 0.5;
+  const startY = muzzlePos.y > 0 ? muzzlePos.y : canvas.height;
+  laserBeams.push({
+    x1: startX,
+    y1: startY,
+    x2: targetX,
+    y2: targetY,
+    alpha: 1
+  });
+
+  // 5. 命中判定
+  let hitAny = false;
+  for (let i = drones.length - 1; i >= 0; i--) {
+    const d = drones[i];
+    const dist = Math.hypot(targetX - d.x, targetY - d.y);
+    if (dist < d.radius + 20) {
+      // 命中！
+      hitAny = true;
+      d.hp -= 1;
+      sfx.playHitSound();
+
+      if (d.hp <= 0) {
+        d.isDead = true;
+        sfx.playExplosion();
+        spawnExplosion(d.x, d.y);
+
+        // 連擊與加分
+        if (now - lastHitTime < 2500) {
+          combo++;
+        } else {
+          combo = 1;
+        }
+        lastHitTime = now;
+
+        const points = 100 * combo;
+        score += points;
+        scoreElem.innerText = score;
+
+        if (combo > 1) {
+          comboElem.innerText = `${combo}x COMBO!`;
+          comboElem.classList.add('active');
+        }
+
+        spawnFloatingText(`+${points}`, d.x, d.y, '#00ff88');
+        drones.splice(i, 1);
+      }
+      break; // 一發子彈打一個
+    }
+  }
+
+  if (!hitAny) {
+    // 沒打中時在命中點產生微火花
+    spawnExplosion(targetX, targetY, '#00f0ff');
+  }
+}
+
+// 畫面點擊備用開火 (讓電腦或除錯時隨時能玩)
+window.addEventListener('pointerdown', (e) => {
+  sfx.init();
+  triggerShot(e.clientX, e.clientY);
+});
+
+// --- MediaPipe 手勢偵測回呼 ---
+function onResults(results) {
+  if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+    isGunDetected = false;
+    gunCrosshair.active = false;
+    statusDot.className = 'status-dot';
+    statusText.innerText = '尋找手部中... 請伸出手比手槍 👉';
+    return;
+  }
+
+  const landmarks = results.multiHandLandmarks[0];
+
+  // 轉換成畫布座標
+  const pts = landmarks.map(p => ({
+    x: (currentFacingMode === 'user' ? (1 - p.x) : p.x) * canvas.width,
+    y: p.y * canvas.height,
+    z: p.z
+  }));
+
+  // 計算距離小幫手
+  const dist = (i, j) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+
+  // 手掌參考尺寸 (手腕 0 到 中指 MCP 9)
+  const palmSize = dist(0, 9);
+  if (palmSize < 20) return;
+
+  // 1. 食指伸展判定 (Index finger extended)
+  const isIndexExtended = dist(8, 0) > dist(6, 0) * 1.25;
+
+  // 2. 中指、無名指、小指收攏握拳判定 (Fingers curled)
+  const isMiddleCurled = dist(12, 0) < dist(9, 0) * 1.35;
+  const isRingCurled = dist(16, 0) < dist(13, 0) * 1.35;
+  const isPinkyCurled = dist(20, 0) < dist(17, 0) * 1.35;
+
+  const isGunPose = isIndexExtended && isMiddleCurled && isRingCurled;
+
+  if (isGunPose) {
+    isGunDetected = true;
+    gunCrosshair.active = true;
+
+    // 槍口位置 (食指指尖 8)
+    muzzlePos = { x: pts[8].x, y: pts[8].y };
+
+    // 準星向前延伸 (從指關節 6 朝指尖 8 延伸方向)
+    const dirX = pts[8].x - pts[6].x;
+    const dirY = pts[8].y - pts[6].y;
+    const dirLen = Math.hypot(dirX, dirY) || 1;
+    
+    // 準星定在指尖前方 120 像素處
+    gunCrosshair.x = pts[8].x + (dirX / dirLen) * 140;
+    gunCrosshair.y = pts[8].y + (dirY / dirLen) * 140;
+
+    // 3. 扣扳機射擊判定 (大拇指尖 4 相對食指根部 5 的歸一化距離)
+    const thumbDist = dist(4, 5) / palmSize;
+
+    // 狀態機：大拇指立起時準備 (Ready)，下扣時開火 (Fire)
+    if (thumbDist > 0.62) {
+      isThumbReady = true;
+      statusDot.className = 'status-dot ready';
+      statusText.innerText = '🎯 鎖定瞄準！向下扣動大拇指開火！';
+    } else if (isThumbReady && thumbDist < 0.46) {
+      // 觸發開火！
+      isThumbReady = false;
+      statusDot.className = 'status-dot';
+      statusText.innerText = '💥 FIRE!! 開火！';
+      triggerShot(gunCrosshair.x, gunCrosshair.y);
+    }
+  } else {
+    isGunDetected = false;
+    gunCrosshair.active = false;
+    statusDot.className = 'status-dot';
+    statusText.innerText = '請伸展食指、收合其他手指比出 👉';
+  }
+}
+
+// --- 主渲染循環 (動畫與繪圖) ---
+let lastTime = performance.now();
+function gameLoop() {
+  const now = performance.now();
+  const dt = (now - lastTime) / 1000;
+  lastTime = now;
+
+  // 連擊超時重置
+  if (combo > 0 && Date.now() - lastHitTime > 3000) {
+    combo = 0;
+    comboElem.classList.remove('active');
+  }
+
+  // 生成敵人無人機 (保持畫面上 2~4 隻)
+  if (drones.length < 3 && Date.now() > nextDroneSpawn) {
+    drones.push(new CyberDrone());
+    nextDroneSpawn = Date.now() + 1800 + Math.random() * 1500;
+  }
+
+  // 螢幕震動計算
+  ctx.save();
+  if (screenShake > 0) {
+    const rx = (Math.random() - 0.5) * screenShake;
+    const ry = (Math.random() - 0.5) * screenShake;
+    ctx.translate(rx, ry);
+    screenShake *= 0.85;
+    if (screenShake < 0.5) screenShake = 0;
+  }
+
+  // 1. 繪製攝影機影像至 Canvas
+  if (videoElement.readyState >= 2) {
+    ctx.save();
+    if (currentFacingMode === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    // 加上暗色漸變暗角，突顯賽博射擊感
+    const vignette = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+      canvas.width / 2, canvas.height / 2, canvas.width * 0.75
+    );
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(5, 10, 25, 0.55)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#0a0d1a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // 2. 更新並繪製無人機
+  for (let d of drones) {
+    d.update(dt);
+    d.draw(ctx);
+  }
+
+  // 3. 繪製雷射光束
+  for (let i = laserBeams.length - 1; i >= 0; i--) {
+    const beam = laserBeams[i];
+    ctx.save();
+    ctx.strokeStyle = `rgba(0, 240, 255, ${beam.alpha})`;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(beam.x1, beam.y1);
+    ctx.lineTo(beam.x2, beam.y2);
+    ctx.stroke();
+    ctx.restore();
+
+    beam.alpha -= 0.12;
+    if (beam.alpha <= 0) laserBeams.splice(i, 1);
+  }
+
+  // 4. 繪製粒子碎片
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;
+    p.alpha -= p.decay;
+
+    ctx.save();
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0, p.alpha);
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    if (p.alpha <= 0) particles.splice(i, 1);
+  }
+
+  // 5. 繪製浮動文字
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y += ft.vy;
+    ft.alpha -= 0.025;
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, ft.alpha);
+    ctx.fillStyle = ft.color;
+    ctx.font = '900 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = ft.color;
+    ctx.shadowBlur = 10;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+
+    if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+  }
+
+  // 6. 繪製未來科幻準星 (Crosshair)
+  if (gunCrosshair.active) {
+    const cx = gunCrosshair.x;
+    const cy = gunCrosshair.y;
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // 準星外圓環
+    ctx.strokeStyle = isThumbReady ? '#00ff88' : '#00f0ff';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = ctx.strokeStyle;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 準星十字線
+    ctx.beginPath();
+    ctx.moveTo(-30, 0); ctx.lineTo(-10, 0);
+    ctx.moveTo(10, 0); ctx.lineTo(30, 0);
+    ctx.moveTo(0, -30); ctx.lineTo(0, -10);
+    ctx.moveTo(0, 10); ctx.lineTo(0, 30);
+    ctx.stroke();
+
+    // 中心點
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  ctx.restore(); // 恢復螢幕震動
+
+  requestAnimationFrame(gameLoop);
+}
+
+// --- 初始化 MediaPipe Hands 與相機 ---
+const hands = new Hands({
+  locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+});
+hands.setOptions({
+  maxNumHands: 1,
+  modelComplexity: 1,
+  minDetectionConfidence: 0.65,
+  minTrackingConfidence: 0.65
+});
+hands.onResults(onResults);
+
+function startCamera(facingMode = 'environment') {
+  currentFacingMode = facingMode;
+  if (cameraInstance) {
+    cameraInstance.stop();
+  }
+
+  cameraInstance = new Camera(videoElement, {
+    onFrame: async () => {
+      await hands.send({ image: videoElement });
+    },
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    facingMode: facingMode
+  });
+  cameraInstance.start();
+}
+
+// 點擊「切換前後鏡頭」
+document.getElementById('camera-flip-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+  startCamera(currentFacingMode);
+});
+
+// 開始按鈕
+document.getElementById('start-btn').addEventListener('click', () => {
+  sfx.init();
+  document.getElementById('start-modal').style.display = 'none';
+  startCamera(currentFacingMode);
+  requestAnimationFrame(gameLoop);
+});
+</script>
+
+</body>
+</html>
