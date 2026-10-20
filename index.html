@@ -233,6 +233,30 @@
       transform: scale(0.9);
     }
 
+    /* BOSS 出現全螢幕警告橫幅 */
+    #boss-warning-banner {
+      position: absolute;
+      top: 18%;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(90deg, rgba(255,0,0,0) 0%, rgba(255,0,60,0.88) 25%, rgba(255,0,60,0.88) 75%, rgba(255,0,0,0) 100%);
+      color: #fff;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: 0 0 35px rgba(255, 0, 60, 0.9);
+      z-index: 50;
+      transform: scaleY(0);
+      transition: transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      pointer-events: none;
+      text-shadow: 0 0 10px #000;
+    }
+    #boss-warning-banner.active {
+      transform: scaleY(1);
+    }
+
     /* 底部手勢狀態提示 */
     .status-panel {
       position: absolute;
@@ -350,6 +374,9 @@
   <div id="flash-overlay"></div>
   <div id="damage-overlay"></div>
   <div id="bullet-time-overlay"></div>
+
+  <!-- BOSS 登場全螢幕警告橫幅 -->
+  <div id="boss-warning-banner">⚠️ WARNING: CYBER DREADNOUGHT BOSS ⚠️</div>
 
   <!-- 極簡全通透 HUD 資訊列 -->
   <div id="hud">
@@ -614,6 +641,45 @@ class SoundSynthesizer {
     osc.stop(now + 0.06);
   }
 
+  // ⚠️ BOSS 登場空襲重低音警報
+  playBossAlert() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    for (let i = 0; i < 2; i++) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, now + i * 0.35);
+      osc.frequency.linearRampToValueAtTime(320, now + i * 0.35 + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(80, now + i * 0.35 + 0.34);
+
+      gain.gain.setValueAtTime(0.4, now + i * 0.35);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.35 + 0.34);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + i * 0.35);
+      osc.stop(now + i * 0.35 + 0.34);
+    }
+  }
+
+  // BOSS 重砲開火音
+  playBossLaser() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(260, now);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.25);
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.26);
+  }
+
   // 賽博 BGM (124 BPM)
   startBgm() {
     if (this.bgmPlaying || !this.ctx) return;
@@ -764,28 +830,31 @@ const activePerks = {
   nanoShieldHp: 0      // 🛡️ 奈米護盾當前數值
 };
 
-// 手勢與武器狀態 (抗遮擋與重疊防抖)
+// 手勢與武器狀態 (拒絕靜態誤射 · 真實動態扳機)
 let currentWeapon = 'PISTOL';
 let isGunDetected = false;
-let isThumbReady = false;
+let isTriggerReady = true; // 食指/拇指扳機上膛狀態
 let lastFireTime = 0;
 let lastValidGunTime = 0; // 姿態記憶緩衝時間戳
 let gunCrosshair = { x: -100, y: -100, targetX: -100, targetY: -100, active: false };
 let muzzlePos = { x: -100, y: -100 };
 let currentHandLandmarks = null;
 let prevThumbDist = 0.5;
-let prevIndexY = 0; // 食指微動輔助判定
+let prevIndexRatio = 1.5;
 
 // 特效實體池
 let particles = [];
 let floatingTexts = [];
 let laserBeams = [];
 let lightningBolts = [];
+let enemyBullets = []; // 敵方能量光彈
 let screenShake = 0;
 
-// 敵人與浮動肉鴿晶片
+// 敵人、BOSS 與浮動肉鴿晶片
 let enemies = [];
 let floatingChips = [];
+let currentBoss = null;
+let bossTriggered = false;
 let nextSpawnTime = 0;
 
 function resizeCanvas() {
@@ -1080,6 +1149,246 @@ class KamikazeDrone {
   }
 }
 
+// ⚠️ 觸發 BOSS 戰
+function triggerBossFight() {
+  bossTriggered = true;
+  sfx.playBossAlert();
+  const banner = document.getElementById('boss-warning-banner');
+  if (banner) {
+    banner.classList.add('active');
+    setTimeout(() => { banner.classList.remove('active'); }, 3000);
+  }
+  screenShake = 25;
+  // 3 秒後母艦降臨
+  setTimeout(() => {
+    currentBoss = new CyberDreadnought();
+  }, 1200);
+}
+
+// 💥 摧毀 BOSS 史詩連鎖大核爆
+function destroyBoss() {
+  if (!currentBoss) return;
+  const bx = currentBoss.x;
+  const by = currentBoss.y;
+  currentBoss = null;
+
+  // 連續連鎖大核爆
+  for (let i = 0; i < 7; i++) {
+    setTimeout(() => {
+      sfx.playExplosion();
+      screenShake = 24;
+      flashOverlay.style.opacity = '1';
+      setTimeout(() => { flashOverlay.style.opacity = '0'; }, 80);
+      spawnExplosion(bx + (Math.random() - 0.5) * 220, by + (Math.random() - 0.5) * 60, '#ff9900');
+      spawnExplosion(bx + (Math.random() - 0.5) * 160, by + (Math.random() - 0.5) * 50, '#ff0055');
+    }, i * 200);
+  }
+
+  // 加 3000 分與大量肉鴿晶片掉落
+  setTimeout(() => {
+    score += 3000;
+    scoreElem.innerText = score;
+    spawnFloatingText('🏆 DREADNOUGHT DESTROYED! +3000', canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
+    // 空投 3 個金色晶片
+    spawnPerkDrop();
+    spawnPerkDrop();
+  }, 1400);
+}
+class EnemyBullet {
+  constructor(x, y, targetX, targetY) {
+    this.x = x;
+    this.y = y;
+    this.radius = 14;
+    const dx = targetX - x;
+    const dy = targetY - y;
+    const d = Math.hypot(dx, dy) || 1;
+    this.vx = (dx / d) * 3.5;
+    this.vy = (dy / d) * 3.5;
+    this.isDead = false;
+  }
+
+  update(dt, timeScale) {
+    this.x += this.vx * timeScale;
+    this.y += this.vy * timeScale;
+
+    // 撞擊玩家
+    if (this.y > canvas.height * 0.7) {
+      applyDamage(15);
+      spawnExplosion(this.x, this.y, '#ff0055');
+      this.isDead = true;
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.fillStyle = '#ff0055';
+    ctx.shadowColor = '#ff0033';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffea00';
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// 👑 巨型賽博重巡洋母艦 BOSS (Cyber Dreadnought)
+class CyberDreadnought {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -140; // 緩降入場
+    this.targetY = 110;
+    this.width = Math.min(480, canvas.width * 0.78);
+    this.height = 70;
+    this.moveDir = 1;
+    this.shootTimer = 0;
+    this.isDead = false;
+
+    // 3 大戰鬥部位
+    this.leftCore = { relX: -this.width * 0.36, relY: -5, hp: 8, maxHp: 8, radius: 24, alive: true };
+    this.rightCore = { relX: this.width * 0.36, relY: -5, hp: 8, maxHp: 8, radius: 24, alive: true };
+    this.mainReactor = { relX: 0, relY: 15, hp: 26, maxHp: 26, radius: 32, alive: true };
+  }
+
+  update(dt, timeScale) {
+    // 降落入場
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * (0.03 * timeScale) + 0.5;
+    } else {
+      // 左右緩慢巡弋
+      this.x += this.moveDir * 0.8 * timeScale;
+      if (this.x > canvas.width * 0.65) this.moveDir = -1;
+      else if (this.x < canvas.width * 0.35) this.moveDir = 1;
+
+      // 發射能量光球
+      this.shootTimer += dt * timeScale;
+      if (this.shootTimer > 2.2) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        // 從兩翼發射光彈
+        if (this.leftCore.alive) {
+          enemyBullets.push(new EnemyBullet(this.x + this.leftCore.relX, this.y + 20, canvas.width * 0.4, canvas.height * 0.7));
+        }
+        if (this.rightCore.alive) {
+          enemyBullets.push(new EnemyBullet(this.x + this.rightCore.relX, this.y + 20, canvas.width * 0.6, canvas.height * 0.7));
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    const w = this.width;
+    const h = this.height;
+
+    // 1. 母艦主艦體 (科幻重裝甲幾何體)
+    ctx.fillStyle = '#0a1020';
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 15;
+
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.5, -h * 0.2);
+    ctx.lineTo(-w * 0.3, -h * 0.5);
+    ctx.lineTo(w * 0.3, -h * 0.5);
+    ctx.lineTo(w * 0.5, -h * 0.2);
+    ctx.lineTo(w * 0.45, h * 0.4);
+    ctx.lineTo(0, h * 0.65);
+    ctx.lineTo(-w * 0.45, h * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 艦身發光紋路
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.35, 0); ctx.lineTo(w * 0.35, 0);
+    ctx.moveTo(-w * 0.2, -h * 0.3); ctx.lineTo(-w * 0.1, h * 0.3);
+    ctx.moveTo(w * 0.2, -h * 0.3); ctx.lineTo(w * 0.1, h * 0.3);
+    ctx.stroke();
+
+    // 2. 繪製左翼護盾核心
+    this.drawCore(ctx, this.leftCore, '#00f0ff', 'L-CORE');
+
+    // 3. 繪製右翼護盾核心
+    this.drawCore(ctx, this.rightCore, '#00f0ff', 'R-CORE');
+
+    // 4. 繪製中央反應爐核心
+    const shieldActive = this.leftCore.alive || this.rightCore.alive;
+    const reactorColor = shieldActive ? '#00f0ff' : '#ff3300';
+    this.drawCore(ctx, this.mainReactor, reactorColor, shieldActive ? '🛡️ SHIELDED' : '⚠️ WEAKPOINT');
+
+    // 若護盾還在，繪製覆蓋反應爐的全息防護力場
+    if (shieldActive) {
+      ctx.save();
+      ctx.translate(this.mainReactor.relX, this.mainReactor.relY);
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 6]);
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.mainReactor.radius + 12, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // BOSS 頂部血條
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(-w * 0.4, -h * 0.5 - 16, w * 0.8, 8);
+    const totalHp = (this.leftCore.alive ? this.leftCore.hp : 0) + (this.rightCore.alive ? this.rightCore.hp : 0) + this.mainReactor.hp;
+    const maxTotal = this.leftCore.maxHp + this.rightCore.maxHp + this.mainReactor.maxHp;
+    ctx.fillStyle = '#ff0055';
+    ctx.fillRect(-w * 0.4, -h * 0.5 - 16, (w * 0.8) * Math.max(0, totalHp / maxTotal), 8);
+
+    ctx.restore();
+  }
+
+  drawCore(ctx, core, color, label) {
+    ctx.save();
+    ctx.translate(core.relX, core.relY);
+    if (!core.alive) {
+      // 已被擊破：冒黑煙殘骸
+      ctx.fillStyle = '#222';
+      ctx.beginPath();
+      ctx.arc(0, 0, core.radius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, core.radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(0, 0, core.radius * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, 0, core.radius + 11);
+
+    ctx.restore();
+  }
+}
+
 function applyDamage(amount) {
   if (isGameOver) return;
   currentHp = Math.max(0, currentHp - amount);
@@ -1114,6 +1423,9 @@ function restartGame() {
   killCount = 0;
   combo = 0;
   enemies = [];
+  enemyBullets = [];
+  currentBoss = null;
+  bossTriggered = false;
   floatingChips = [];
   particles = [];
   laserBeams = [];
@@ -1310,11 +1622,95 @@ function executeFire(originX, originY, targetX, targetY) {
           if (killCount % 7 === 0) {
             spawnPerkDrop();
           }
+
+          // 👑 累計擊殺滿 16 隻觸發巨型母艦 BOSS 戰！
+          if (killCount >= 16 && !bossTriggered && !currentBoss) {
+            triggerBossFight();
+          }
         }
 
         if (activePerks.clusterLevel === 0) {
           break; // 若沒有穿透技能，子彈被消耗
         }
+      }
+    }
+
+    // 4. 擊落敵方能量光彈 (防禦攔截)
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const b = enemyBullets[i];
+      if (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 20) {
+        sfx.playHitSound();
+        spawnExplosion(b.x, b.y, '#00f0ff');
+        enemyBullets.splice(i, 1);
+        score += 50;
+        scoreElem.innerText = score;
+        spawnFloatingText('INTERCEPTED! +50', b.x, b.y, '#00f0ff');
+        break;
+      }
+    }
+
+    // 5. 攻擊巨型母艦 BOSS 弱點判定
+    if (currentBoss && currentBoss.y > 0) {
+      const bx = currentBoss.x;
+      const by = currentBoss.y;
+      const damage = 1 + activePerks.clusterLevel;
+
+      // (A) 左翼護盾核心
+      if (currentBoss.leftCore.alive) {
+        const lx = bx + currentBoss.leftCore.relX;
+        const ly = by + currentBoss.leftCore.relY;
+        if (Math.hypot(p.tx - lx, p.ty - ly) < currentBoss.leftCore.radius + 20) {
+          currentBoss.leftCore.hp -= damage;
+          sfx.playHitSound();
+          spawnExplosion(p.tx, p.ty, '#00f0ff');
+          if (currentBoss.leftCore.hp <= 0) {
+            currentBoss.leftCore.alive = false;
+            sfx.playExplosion();
+            spawnExplosion(lx, ly, '#ff9900');
+            spawnFloatingText('L-CORE DESTROYED!', lx, ly, '#ffdd00');
+          }
+        }
+      }
+
+      // (B) 右翼護盾核心
+      if (currentBoss.rightCore.alive) {
+        const rx = bx + currentBoss.rightCore.relX;
+        const ry = by + currentBoss.rightCore.relY;
+        if (Math.hypot(p.tx - rx, p.ty - ry) < currentBoss.rightCore.radius + 20) {
+          currentBoss.rightCore.hp -= damage;
+          sfx.playHitSound();
+          spawnExplosion(p.tx, p.ty, '#00f0ff');
+          if (currentBoss.rightCore.hp <= 0) {
+            currentBoss.rightCore.alive = false;
+            sfx.playExplosion();
+            spawnExplosion(rx, ry, '#ff9900');
+            spawnFloatingText('R-CORE DESTROYED!', rx, ry, '#ffdd00');
+          }
+        }
+      }
+
+      // (C) 中央主反應爐
+      const mx = bx + currentBoss.mainReactor.relX;
+      const my = by + currentBoss.mainReactor.relY;
+      if (Math.hypot(p.tx - mx, p.ty - my) < currentBoss.mainReactor.radius + 24) {
+        const shieldActive = currentBoss.leftCore.alive || currentBoss.rightCore.alive;
+        if (shieldActive) {
+          // 護盾免疫
+          spawnFloatingText('🛡️ IMMUNE! (先破壞兩翼核心)', mx, my, '#00f0ff');
+          sfx.playHitSound();
+        } else {
+          // 弱點致命破壞
+          currentBoss.mainReactor.hp -= damage * 2; // 弱點 2 倍暴擊
+          sfx.playHitSound();
+          spawnExplosion(p.tx, p.ty, '#ff3300');
+          spawnFloatingText(`CRITICAL! -${damage * 2}`, mx, my, '#ff0055');
+
+          if (currentBoss.mainReactor.hp <= 0) {
+            destroyBoss();
+          }
+        }
+      }
+    }
       }
     }
   }
@@ -1330,15 +1726,14 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // ==========================================
-// 6. MediaPipe 手勢辨識 (抗大拇指食指重疊遮擋加強版)
+// 6. MediaPipe 手勢辨識 (純動態扣扳機 · 徹底杜絕重疊誤射)
 // ==========================================
 function onResults(results) {
   if (isGameOver) return;
   const now = Date.now();
 
   if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-    // 350ms 姿態記憶緩衝：若短暫丟失手部，不立刻閃退
-    if (now - lastValidGunTime > 350) {
+    if (now - lastValidGunTime > 400) {
       isGunDetected = false;
       gunCrosshair.active = false;
       currentHandLandmarks = null;
@@ -1360,23 +1755,24 @@ function onResults(results) {
   const palmSize = dist(0, 5) || 100;
   if (palmSize < 25) return;
 
-  // 1. 食指伸展判定 (寬容度抗抖動)
+  // 1. 食指伸展指標 (8指尖到5根部 相對 6關節到5根部)
   const indexLen = dist(8, 5);
   const indexBase = dist(6, 5);
-  const isIndexStraight = indexLen > indexBase * 1.35 || (now - lastValidGunTime < 350);
+  const indexRatio = indexLen / indexBase;
+
+  // 只要食指有大致伸出，即判定為持槍姿態 (加上記憶緩衝)
+  const isHoldingGun = indexRatio > 1.2 || (now - lastValidGunTime < 400);
 
   // 2. 中指伸展判定 (手槍 VS 霰彈槍)
-  const isMiddleStraight = dist(12, 9) > dist(10, 9) * 1.4 && dist(12, 0) > dist(8, 0) * 0.78;
+  const isMiddleStraight = dist(12, 9) > dist(10, 9) * 1.35 && dist(12, 0) > dist(8, 0) * 0.75;
 
-  if (isIndexStraight && isMiddleStraight) {
+  if (isHoldingGun && isMiddleStraight) {
     currentWeapon = 'SHOTGUN';
-  } else if (isIndexStraight) {
+  } else if (isHoldingGun) {
     currentWeapon = 'PISTOL';
   }
 
-  const isGunPose = isIndexStraight;
-
-  if (isGunPose) {
+  if (isHoldingGun) {
     isGunDetected = true;
     lastValidGunTime = now;
     gunCrosshair.active = true;
@@ -1390,40 +1786,37 @@ function onResults(results) {
     gunCrosshair.targetX = pts[8].x + (dirX / dirLen) * 140;
     gunCrosshair.targetY = pts[8].y + (dirY / dirLen) * 140;
 
-    // 3. 多維度檢測大拇指與食指距離及「重疊狀態」
-    const thumbToMcp = dist(4, 5) / palmSize; // 拇指尖到食指根
-    const thumbToPip = dist(4, 6) / palmSize; // 拇指尖到食指關節 (重疊關鍵位)
-    const thumbToDip = dist(4, 7) / palmSize; // 拇指尖到食指指節
+    // 3. 純動態扣扳機判定 (不再使用任何靜態重疊判定，徹底杜絕走火！)
+    // (A) 食指指尖扣動 (Trigger Pull)：伸直為上膛，指尖扣一下開火！
+    const indexNod = prevIndexRatio - indexRatio; // 食指急速彎曲的差值
+    prevIndexRatio = indexRatio;
 
-    // 拇指下壓速度
-    const thumbSpeed = prevThumbDist - thumbToMcp;
-    prevThumbDist = thumbToMcp;
+    // (B) 拇指急速下壓動態
+    const thumbDist = dist(4, 5) / palmSize;
+    const thumbSpeed = prevThumbDist - thumbDist;
+    prevThumbDist = thumbDist;
 
-    // 食指微動速度 (輔助判定)
-    const indexSpeed = pts[8].y - prevIndexY;
-    prevIndexY = pts[8].y;
-
-    // 核心重疊判定：拇指壓在食指關節上 (thumbToPip 或 thumbToDip 很小，代表兩指覆蓋重疊！)
-    const isOverlapping = (thumbToPip < 0.28) || (thumbToDip < 0.28) || (thumbToMcp < 0.38);
-
-    // 狀態機：
-    // (A) 立起瞄準 Ready 條件：拇指與食指有明顯分開
-    if (thumbToMcp > 0.42 && thumbToPip > 0.34) {
-      isThumbReady = true;
+    // 上膛 (Ready) 條件：食指伸直
+    if (indexRatio > 1.45 || thumbDist > 0.44) {
+      isTriggerReady = true;
       statusDot.className = 'status-dot ready';
       statusText.innerText = currentWeapon === 'SHOTGUN' 
-        ? '💥 霰彈就緒！扣動拇指 5 連發覆蓋！' 
-        : '🎯 鎖定瞄準！向下扣動大拇指開火！';
-    } 
-    // (B) 開火條件：只要處於 Ready，且偵測到「重疊覆蓋」或「急促下扣」或「食指微扣」
-    else if (isThumbReady && (isOverlapping || thumbSpeed > 0.055 || (indexSpeed > 15 && thumbToMcp < 0.45))) {
-      isThumbReady = false;
+        ? '💥 霰彈就緒！彎一下食指(或扣拇指)開火！' 
+        : '🎯 瞄準中！微扣食指(或壓拇指)即可射擊！';
+    }
+
+    // 開火 (Fire) 條件：必須處於 Ready 且檢測到「食指主動扣下」或「拇指劇烈下壓」
+    const isIndexPulling = isTriggerReady && (indexRatio < 1.26 || indexNod > 0.12);
+    const isThumbSlapping = isTriggerReady && (thumbSpeed > 0.08);
+
+    if (isIndexPulling || isThumbSlapping) {
+      isTriggerReady = false; // 立即消耗上膛狀態，避免連射走火
       statusDot.className = 'status-dot';
       statusText.innerText = '💥 FIRE!! 開火！';
       executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
     }
   } else {
-    if (now - lastValidGunTime > 350) {
+    if (now - lastValidGunTime > 400) {
       isGunDetected = false;
       gunCrosshair.active = false;
       statusDot.className = 'status-dot';
@@ -1482,6 +1875,18 @@ function gameLoop() {
       if (shouldRemove) enemies.splice(i, 1);
     }
 
+    // 更新巨型母艦 BOSS
+    if (currentBoss) {
+      currentBoss.update(dt, timeScale);
+    }
+
+    // 更新敵方能量光彈
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const b = enemyBullets[i];
+      b.update(dt, timeScale);
+      if (b.isDead) enemyBullets.splice(i, 1);
+    }
+
     // 更新浮動肉鴿晶片
     for (let i = floatingChips.length - 1; i >= 0; i--) {
       const chip = floatingChips[i];
@@ -1524,12 +1929,22 @@ function gameLoop() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  // 2. 繪製浮動肉鴿晶片箱
+  // 2. 繪製巨型母艦 BOSS (若存在)
+  if (currentBoss) {
+    currentBoss.draw(ctx);
+  }
+
+  // 2.5 繪製敵方能量光彈
+  for (let b of enemyBullets) {
+    b.draw(ctx);
+  }
+
+  // 2.8 繪製浮動肉鴿晶片箱
   for (let chip of floatingChips) {
     chip.draw(ctx);
   }
 
-  // 3. 繪製所有敵人
+  // 3. 繪製所有一般敵人
   for (let e of enemies) {
     e.draw(ctx);
   }
@@ -1640,7 +2055,7 @@ function gameLoop() {
     if (currentWeapon === 'SHOTGUN') ctx.arc(pts[12].x, pts[12].y, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = isThumbReady ? '#00ff88' : '#ff4444';
+    ctx.fillStyle = isTriggerReady ? '#00ff88' : '#ff4444';
     ctx.beginPath();
     ctx.arc(pts[4].x, pts[4].y, 6, 0, Math.PI * 2);
     ctx.fill();
@@ -1663,8 +2078,8 @@ function gameLoop() {
     ctx.translate(cx, cy);
 
     const themeColor = currentWeapon === 'SHOTGUN' 
-      ? (isThumbReady ? '#ffaa00' : '#ff5500') 
-      : (isThumbReady ? '#00ff88' : '#00f0ff');
+      ? (isTriggerReady ? '#ffaa00' : '#ff5500') 
+      : (isTriggerReady ? '#00ff88' : '#00f0ff');
 
     ctx.strokeStyle = themeColor;
     ctx.lineWidth = 2.5;
@@ -1698,7 +2113,7 @@ function gameLoop() {
     ctx.font = '900 11px sans-serif';
     ctx.textAlign = 'center';
     const weaponLabel = currentWeapon === 'SHOTGUN' ? '💥 SHOTGUN' : '🔫 PISTOL';
-    const statusLabel = isThumbReady ? 'READY' : 'AIM';
+    const statusLabel = isTriggerReady ? 'READY' : 'AIM';
     ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, currentWeapon === 'SHOTGUN' ? 48 : 38);
 
     ctx.restore();
