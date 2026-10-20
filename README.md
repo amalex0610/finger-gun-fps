@@ -1,10 +1,10 @@
-# 🔫 Cyber Finger-Gun AR 2.0 (賽博指槍 AR)
+# 🔫 Cyber Finger-Gun AR 3.0 (賽博指槍 AR · 肉鴿晶片版)
 
-> **零硬體外設！用手機鏡頭 + 雙手直接開玩的實景第一人稱射擊（FPS）爽 Game！**
+> **零硬體外設！用手機鏡頭 + 雙手直接開玩的實景第一人稱射擊（FPS）肉鴿爽 Game！**
 
 [![GitHub Pages](https://img.shields.io/badge/Live%20Demo-Play%20Now-00f0ff?style=for-the-badge&logo=googlechrome)](https://amalex0610.github.io/finger-gun-fps/)
 [![MediaPipe](https://img.shields.io/badge/AI%20Vision-MediaPipe%20Hands-ff007f?style=for-the-badge)](https://developers.google.com/mediapipe)
-[![Web Audio](https://img.shields.io/badge/Audio-Synthesized%20BGM%20%26%20SFX-ffdd00?style=for-the-badge)](#)
+[![Web Audio](https://img.shields.io/badge/Audio-Procedural%20BGM%20%26%20Tesla%20SFX-ffdd00?style=for-the-badge)](#)
 
 ---
 
@@ -17,47 +17,35 @@
 | **👉 單指手槍 (Pistol)** | **伸直食指**，其餘手指握拳 | 槍口跟隨指尖，單發精準高爆雷射，180ms 極速射擊 |
 | **💥 雙指霰彈 (Shotgun)** | **伸直食指＋中指** 併攏 | 準星自動擴大，扣動扳機瞬間發射 **5 顆扇形擴散彈丸**！ |
 | **⚡ 扣扳機開火 (Fire)** | **大拇指往下扣一下**（Pull Trigger） | 動態速度偵測，瞬間發射、螢幕後座力震動、槍口閃光 |
-| **📱 觸控備用** | 點擊螢幕任意位置 | 支援螢幕單點強制開火（除錯或單手點擊時使用） |
+| **🎁 射擊拾取晶片** | 用手槍直接瞄準浮動晶片開火射擊 | 晶片瞬間吸入核心，啟動特異肉鴿技能！ |
 
 ---
 
-## ⚡ 2.0 全新升級亮點 (What's New in v2.0)
+## ⚡ 3.0 全新升級亮點 (What's New in v3.0)
 
-1. **🎵 程式化賽博電子 BGM (124 BPM Synthwave)**：
-   * 內建 **Web Audio API 物理合成器**，合成 4/4 拍底鼓（Kick）、金屬踩鑔（Hi-hat）、合成器重低音 Bassline 與賽博琶音旋律。
-   * **零外部音訊依賴，秒開秒響，永不 404**，右上角隨時可一鍵切換靜音。
-2. **💥 雙武器手勢自動切換**：
-   * 食指 👉：手槍模式（精準打擊）。
-   * 雙指 ✌️：霰彈槍模式（雙管 5 連發扇形覆蓋，近身秒殺）。
-3. **⚠️ 自爆衝鋒怪 (Kamikaze Drone) 與玩家生命值 (HP)**：
-   * 新增帶有旋轉紅刺、自帶急促嗶嗶警報聲的自爆怪，會直線加速衝撞玩家鏡頭！
-   * 玩家擁有 100 點 HP，被撞擊時觸發螢幕暗紅裂紋閃爍與手機強烈震動！
-   * 支援 Game Over 結算與滿血一鍵重啟。
-4. **⚡ 60 FPS 極速 Lite 手勢模型**：
-   * 換裝輕量級 AI 手部模型，延遲大幅降低 70%，加上科幻霓虹骨骼微光顯示與平滑防抖準星。
+1. **🎁 肉鴿戰鬥晶片系統（Shoot-to-Equip）**：
+   * 每累積擊殺 7 隻敵人，天空會空投懸浮的全息肉鴿晶片箱！
+   * **不需要放下手去摸螢幕**，直接拿手槍瞄準想選的晶片「砰！」打爆，直接吸附啟用！
+   * 包含 4 種特異晶片：
+     * ⚡ **【連環高壓電弧 (Tesla Chain)】**：擊殺目標時，一道藍紫色高壓電弧彈射至周圍 2 隻敵人引發連鎖擊破！
+     * 💥 **【高爆核子穿透 (Cluster Bomb)】**：子彈貫穿直線敵人，並引發範圍 AOE 爆炸！
+     * ⏱️ **【駭客子彈時間 (Chrono Shift)】**：時間流速減慢 72% 持續 6 秒，進入慢動作世界挨個點爆！
+     * 🛡️ **【緊急奈米護甲 (Nano Shield)】**：回復 40 HP，並獲得一層可抵擋一次自爆撞擊的防護力場！
+2. **👀 極簡全通透懸浮 HUD（視野釋放 100%）**：
+   * 移除頂部大塊黑色背景條，改為極細懸浮微型條，完全不擋自爆怪飛出路徑。
+   * 武器狀態直接整合到準星下方，按鈕改為右上角微型圖示。
+3. **🎵 Web Audio 賽博 BGM & 閃電滋滋音效**：
+   * 內建 124 BPM Synthwave 律動音樂，配合子彈時間具備動態時空低頻調變。
 
 ---
 
 ## 🛠️ 技術棧 (Tech Stack)
 
-* **AI 骨骼追蹤**：Google MediaPipe Hands (Lite 模式)
-* **圖形渲染**：HTML5 Canvas 2D + 粒子物理引擎
-* **音訊引擎**：Web Audio API (Procedural Cyber BGM & Dynamic Sound Synthesis)
+* **AI 骨骼追蹤**：Google MediaPipe Hands (Lite 60FPS 模式)
+* **圖形渲染**：HTML5 Canvas 2D + 粒子系統 + 鋸齒閃電物理
+* **音訊引擎**：Web Audio API (Procedural Cyber BGM & Tesla Synthesis)
 * **硬體調用**：WebRTC `getUserMedia` + `navigator.vibrate`
 * **部署環境**：GitHub Pages (HTTPS)
-
----
-
-## 🚀 本地開發與測試 (Local Development)
-
-```bash
-# 啟動本地微型伺服器
-python -m http.server 8000
-
-# 透過瀏覽器訪問
-http://localhost:8000
-```
-*(注意：在手機上使用相機功能需透過 HTTPS 協議，請透過 GitHub Pages 發布網址進行實測)*
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR | 實景手勢槍戰 FPS</title>
+  <title>Cyber Finger-Gun AR 3.0 | 肉鴿晶片射擊</title>
   <style>
     * {
       box-sizing: border-box;
@@ -70,7 +70,22 @@
       z-index: 11;
     }
 
-    /* HUD 介面層 */
+    /* 子彈時間時空扭曲覆蓋層 */
+    #bullet-time-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.05) 30%, rgba(0, 150, 255, 0.25) 100%);
+      box-shadow: inset 0 0 45px rgba(0, 240, 255, 0.4);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease-out;
+      z-index: 9;
+    }
+
+    /* 極簡通透懸浮 HUD (完全不遮擋頂部戰場) */
     #hud {
       position: absolute;
       top: 0;
@@ -81,57 +96,67 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 16px;
+      padding: 12px 14px;
       z-index: 20;
     }
 
-    .top-bar {
+    /* 頂部懸浮列：左側血量與分數，右側微型功能按鈕 */
+    .top-floating-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    /* 左側極簡卡片 (半透明微型條) */
+    .left-status-group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      background: rgba(10, 15, 30, 0.7);
-      backdrop-filter: blur(10px);
-      padding: 12px 18px;
-      border-radius: 16px;
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
+      gap: 5px;
     }
 
-    .top-bar-row1 {
+    .hp-and-score-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 8px;
+      background: rgba(8, 12, 22, 0.6);
+      backdrop-filter: blur(6px);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
     }
 
-    .top-bar-row2 {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+    .hp-bar-bg {
+      width: 65px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+      overflow: hidden;
     }
 
-    .score-box {
-      font-size: 18px;
-      font-weight: 800;
-      color: #00f0ff;
-      letter-spacing: 1px;
+    .hp-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff0055, #00ff88);
+      border-radius: 4px;
+      transition: width 0.2s ease-out;
     }
 
-    .score-value {
+    .score-display {
+      font-size: 14px;
+      font-weight: 900;
       color: #ffdd00;
-      font-size: 24px;
-      margin-left: 6px;
-      text-shadow: 0 0 10px rgba(255, 221, 0, 0.8);
+      text-shadow: 0 0 8px rgba(255, 221, 0, 0.8);
+      letter-spacing: 0.5px;
     }
 
     .combo-badge {
       display: inline-block;
-      margin-left: 10px;
       background: linear-gradient(135deg, #ff0055, #ff5500);
       color: #fff;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 13px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
       font-weight: 900;
       transform: scale(0);
       transition: transform 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28);
@@ -140,122 +165,80 @@
       transform: scale(1);
     }
 
-    /* 玩家血條 */
-    .hp-wrapper {
+    /* 已裝備肉鴿晶片微型徽章 */
+    .perks-inventory {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 1;
+      gap: 5px;
+      flex-wrap: wrap;
     }
 
-    .hp-label {
-      font-size: 13px;
-      font-weight: 900;
-      color: #ff3366;
-      letter-spacing: 0.5px;
-    }
-
-    .hp-bar-bg {
-      flex: 1;
-      height: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 50, 100, 0.4);
-    }
-
-    .hp-bar-fill {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #ff0055, #00ff88);
-      border-radius: 6px;
-      transition: width 0.25s ease-out;
-      box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-    }
-
-    .hp-value-text {
-      font-size: 12px;
-      font-weight: 800;
-      color: #fff;
-      min-width: 45px;
-      text-align: right;
-    }
-
-    /* 武器徽章 */
-    .weapon-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(0, 240, 255, 0.15);
-      border: 1px solid #00f0ff;
+    .perk-pill {
+      background: rgba(0, 240, 255, 0.2);
+      border: 1px solid rgba(0, 240, 255, 0.5);
       color: #00f0ff;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 12px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.5px;
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
-      transition: all 0.2s;
+      backdrop-filter: blur(4px);
     }
 
-    .weapon-badge.shotgun {
-      background: rgba(255, 80, 0, 0.2);
-      border-color: #ff5500;
-      color: #ffaa00;
-      box-shadow: 0 0 12px rgba(255, 85, 0, 0.4);
-    }
-
-    .hud-controls {
+    /* 右側微型圖示按鈕 */
+    .right-btn-group {
       pointer-events: auto;
       display: flex;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .hud-btn {
-      background: rgba(20, 30, 50, 0.85);
-      border: 1px solid #00f0ff;
+    .icon-btn {
+      background: rgba(10, 15, 30, 0.65);
+      border: 1px solid rgba(0, 240, 255, 0.3);
       color: #00f0ff;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 700;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
       cursor: pointer;
-      outline: none;
-      transition: all 0.2s;
+      backdrop-filter: blur(6px);
+      transition: all 0.15s;
     }
-    .hud-btn:active {
+    .icon-btn:active {
       background: #00f0ff;
       color: #000;
+      transform: scale(0.9);
     }
 
-    /* 手勢狀態指示條 */
+    /* 底部手勢狀態提示 */
     .status-panel {
       position: absolute;
-      bottom: 24px;
+      bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(8px);
-      padding: 10px 20px;
-      border-radius: 30px;
+      padding: 7px 16px;
+      border-radius: 20px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      font-size: 13px;
+      font-size: 12px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       white-space: nowrap;
     }
 
     .status-dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: #ff4444;
-      box-shadow: 0 0 8px #ff4444;
+      box-shadow: 0 0 6px #ff4444;
     }
     .status-dot.ready {
       background: #00ff88;
-      box-shadow: 0 0 8px #00ff88;
+      box-shadow: 0 0 6px #00ff88;
     }
 
     /* 初始開始視窗 & Game Over 視窗 */
@@ -276,7 +259,7 @@
     }
 
     .modal-title {
-      font-size: 32px;
+      font-size: 30px;
       font-weight: 900;
       background: linear-gradient(135deg, #00f0ff, #ff007f);
       -webkit-background-clip: text;
@@ -344,34 +327,28 @@
   <canvas id="game-canvas"></canvas>
   <div id="flash-overlay"></div>
   <div id="damage-overlay"></div>
+  <div id="bullet-time-overlay"></div>
 
-  <!-- HUD 資訊列 -->
+  <!-- 極簡全通透 HUD 資訊列 -->
   <div id="hud">
-    <div class="top-bar">
-      <!-- 第一列：分數、連擊、按鈕 -->
-      <div class="top-bar-row1">
-        <div class="score-box">
-          SCORE<span id="score" class="score-value">0</span>
-          <span id="combo" class="combo-badge">3x COMBO</span>
-        </div>
-        <div class="hud-controls">
-          <button id="bgm-toggle-btn" class="hud-btn">🎵 BGM: ON</button>
-          <button id="camera-flip-btn" class="hud-btn">📷 切換鏡頭</button>
-        </div>
-      </div>
-
-      <!-- 第二列：血條與當前武器 -->
-      <div class="top-bar-row2">
-        <div class="hp-wrapper">
-          <span class="hp-label">HP</span>
+    <div class="top-floating-bar">
+      <!-- 左上方：微型血條與分數 -->
+      <div class="left-status-group">
+        <div class="hp-and-score-row">
           <div class="hp-bar-bg">
             <div id="hp-bar-fill" class="hp-bar-fill"></div>
           </div>
-          <span id="hp-text" class="hp-value-text">100/100</span>
+          <span id="score" class="score-display">0</span>
+          <span id="combo" class="combo-badge">3x</span>
         </div>
-        <div id="weapon-badge" class="weapon-badge">
-          <span id="weapon-icon">🔫</span> <span id="weapon-name">PISTOL (單指)</span>
-        </div>
+        <!-- 已裝備肉鴿晶片清單 -->
+        <div id="perks-inventory" class="perks-inventory"></div>
+      </div>
+
+      <!-- 右上方：極簡圖示按鈕 -->
+      <div class="right-btn-group">
+        <button id="bgm-toggle-btn" class="icon-btn" title="切換 BGM">🎵</button>
+        <button id="camera-flip-btn" class="icon-btn" title="切換鏡頭">📷</button>
       </div>
     </div>
 
@@ -384,15 +361,16 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 2.0</div>
+    <div class="modal-title">CYBER FINGER GUN 3.0</div>
     <div class="modal-desc">
-      零外設實景 FPS！真實雙手直接成為高能武器！<br>自爆無人機正在逼近，守護你的陣地！
+      極簡實景 FPS × 肉鴿戰鬥晶片！<br>
+      擊破敵人會掉落懸浮晶片，<b>直接用手槍射擊晶片進行裝備升級</b>！
     </div>
     <div class="gesture-guide">
-      👉 <b>單指手槍 (Pistol)</b>：伸出食指，精準單發狙擊<br>
-      💥 <b>雙指霰彈 (Shotgun)</b>：食指＋中指併攏，扇形 5 連發覆蓋！<br>
-      ⚡ <b>扣扳機開火</b>：大拇指往下扣一下即發射！<br>
-      ⚠️ <b>小心自爆怪</b>：閃爍紅光的危險無人機會加速衝撞你！
+      👉 <b>單指手槍</b>：食指伸直瞄準，精準單發狙擊<br>
+      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發覆蓋<br>
+      ⚡ <b>扣動拇指開火</b>：大拇指往下扣一下即射擊！<br>
+      🎁 <b>射擊拾取晶片</b>：打爆浮動晶片即可啟動特異功能！
     </div>
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始戰鬥</button>
   </div>
@@ -408,7 +386,7 @@
 
 <script>
 // ==========================================
-// 1. Web Audio API：極致戰鬥音效與程式化賽博 BGM
+// 1. Web Audio API：戰鬥音效、閃電電弧與賽博 BGM
 // ==========================================
 class SoundSynthesizer {
   constructor() {
@@ -416,6 +394,7 @@ class SoundSynthesizer {
     this.bgmPlaying = false;
     this.bgmTimer = null;
     this.step = 0;
+    this.isBulletTime = false;
   }
 
   init() {
@@ -427,51 +406,46 @@ class SoundSynthesizer {
     }
   }
 
-  // 手槍射擊音 (Pistol)
+  // 手槍射擊音
   playLaserPistol() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+    osc.frequency.setValueAtTime(this.isBulletTime ? 450 : 800, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + (this.isBulletTime ? 0.3 : 0.15));
 
     gain.gain.setValueAtTime(0.45, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + (this.isBulletTime ? 0.32 : 0.16));
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
     osc.start(now);
-    osc.stop(now + 0.16);
+    osc.stop(now + (this.isBulletTime ? 0.32 : 0.16));
 
-    // 衝擊白噪聲
     this.playNoisePunch(0.08, 0.35);
   }
 
-  // 雙管霰彈槍射擊音 (Shotgun - 重低音擴散爆裂)
+  // 霰彈槍射擊音
   playShotgun() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-
-    // 雙振盪器重擊
     for (let f of [320, 160]) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(f, now);
-      osc.frequency.exponentialRampToValueAtTime(30, now + 0.28);
+      osc.frequency.setValueAtTime(this.isBulletTime ? f * 0.6 : f, now);
+      osc.frequency.exponentialRampToValueAtTime(25, now + 0.3);
 
       gain.gain.setValueAtTime(0.6, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
       osc.start(now);
-      osc.stop(now + 0.3);
+      osc.stop(now + 0.32);
     }
-
-    // 重噪聲破鳴
     this.playNoisePunch(0.2, 0.7);
   }
 
@@ -479,9 +453,7 @@ class SoundSynthesizer {
     const bufferSize = this.ctx.sampleRate * duration;
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
     const filter = this.ctx.createBiquadFilter();
@@ -499,7 +471,48 @@ class SoundSynthesizer {
     noise.start();
   }
 
-  // 命中叮聲
+  // ⚡ 連環閃電電弧滋滋音效
+  playTeslaSound() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    for (let i = 0; i < 3; i++) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1600 + Math.random() * 800, now + i * 0.04);
+      osc.frequency.exponentialRampToValueAtTime(200, now + i * 0.04 + 0.08);
+
+      gain.gain.setValueAtTime(0.2, now + i * 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.08);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + i * 0.04);
+      osc.stop(now + i * 0.04 + 0.08);
+    }
+  }
+
+  // 晶片裝備升級科技音效
+  playUpgradeSound() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    freqs.forEach((f, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, now + i * 0.06);
+
+      gain.gain.setValueAtTime(0.35, now + i * 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + i * 0.06);
+      osc.stop(now + i * 0.06 + 0.18);
+    });
+  }
+
   playHitSound() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -516,7 +529,6 @@ class SoundSynthesizer {
     osc.stop(now + 0.1);
   }
 
-  // 敵人擊毀爆炸
   playExplosion() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -543,7 +555,6 @@ class SoundSynthesizer {
     noise.start(now);
   }
 
-  // 玩家受傷被撞擊音效
   playHurtSound() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -561,7 +572,6 @@ class SoundSynthesizer {
     this.playNoisePunch(0.18, 0.6);
   }
 
-  // 自爆無人機逼近警報滴答音
   playAlertBeep() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
@@ -577,12 +587,12 @@ class SoundSynthesizer {
     osc.stop(now + 0.06);
   }
 
-  // --- 程式化賽博電子 BGM (124 BPM Cyber Synthwave) ---
+  // 賽博 BGM (124 BPM)
   startBgm() {
     if (this.bgmPlaying || !this.ctx) return;
     this.bgmPlaying = true;
     this.step = 0;
-    const stepInterval = (60 / 124) / 4; // 16 分音符
+    const stepInterval = (60 / 124) / 4;
 
     const bassNotes = [55, 55, 55, 55, 65.4, 65.4, 55, 55, 49, 49, 49, 49, 58.2, 58.2, 65.4, 65.4];
     const leadNotes = [220, 0, 261.6, 0, 293.6, 0, 329.6, 0, 392, 0, 329.6, 0, 293.6, 0, 261.6, 0];
@@ -591,14 +601,15 @@ class SoundSynthesizer {
       if (!this.bgmPlaying || !this.ctx) return;
       const now = this.ctx.currentTime;
       const s = this.step % 16;
+      const pitchMod = this.isBulletTime ? 0.65 : 1.0;
 
-      // 4/4 拍重音底鼓 (Kick on 0, 4, 8, 12)
+      // Kick
       if (s % 4 === 0) {
         const kickOsc = this.ctx.createOscillator();
         const kickGain = this.ctx.createGain();
-        kickOsc.frequency.setValueAtTime(120, now);
-        kickOsc.frequency.exponentialRampToValueAtTime(35, now + 0.08);
-        kickGain.gain.setValueAtTime(0.25, now);
+        kickOsc.frequency.setValueAtTime(120 * pitchMod, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(35 * pitchMod, now + 0.08);
+        kickGain.gain.setValueAtTime(0.22, now);
         kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
         kickOsc.connect(kickGain);
         kickGain.connect(this.ctx.destination);
@@ -606,7 +617,7 @@ class SoundSynthesizer {
         kickOsc.stop(now + 0.09);
       }
 
-      // 踩鑔 (Hi-hat on 2, 6, 10, 14)
+      // Hi-hat
       if (s % 2 === 1) {
         const hhBuf = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.03, this.ctx.sampleRate);
         const d = hhBuf.getChannelData(0);
@@ -615,9 +626,9 @@ class SoundSynthesizer {
         hh.buffer = hhBuf;
         const hhFilter = this.ctx.createBiquadFilter();
         hhFilter.type = 'highpass';
-        hhFilter.frequency.setValueAtTime(7000, now);
+        hhFilter.frequency.setValueAtTime(7000 * pitchMod, now);
         const hhGain = this.ctx.createGain();
-        hhGain.gain.setValueAtTime(0.06, now);
+        hhGain.gain.setValueAtTime(0.05, now);
         hhGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
         hh.connect(hhFilter);
         hhFilter.connect(hhGain);
@@ -625,8 +636,8 @@ class SoundSynthesizer {
         hh.start(now);
       }
 
-      // 律動合成 Bassline
-      const bassFreq = bassNotes[s];
+      // Bass
+      const bassFreq = bassNotes[s] * pitchMod;
       if (bassFreq > 0) {
         const bOsc = this.ctx.createOscillator();
         const bGain = this.ctx.createGain();
@@ -634,9 +645,9 @@ class SoundSynthesizer {
         bOsc.frequency.setValueAtTime(bassFreq, now);
         const bFilter = this.ctx.createBiquadFilter();
         bFilter.type = 'lowpass';
-        bFilter.frequency.setValueAtTime(320, now);
+        bFilter.frequency.setValueAtTime(300 * pitchMod, now);
 
-        bGain.gain.setValueAtTime(0.08, now);
+        bGain.gain.setValueAtTime(0.07, now);
         bGain.gain.exponentialRampToValueAtTime(0.001, now + stepInterval * 1.5);
 
         bOsc.connect(bFilter);
@@ -646,14 +657,14 @@ class SoundSynthesizer {
         bOsc.stop(now + stepInterval * 1.5);
       }
 
-      // 賽博琶音旋律 (Arpeggio)
-      const leadFreq = leadNotes[s];
+      // Lead
+      const leadFreq = leadNotes[s] * pitchMod;
       if (leadFreq > 0) {
         const lOsc = this.ctx.createOscillator();
         const lGain = this.ctx.createGain();
         lOsc.type = 'sine';
         lOsc.frequency.setValueAtTime(leadFreq, now);
-        lGain.gain.setValueAtTime(0.04, now);
+        lGain.gain.setValueAtTime(0.035, now);
         lGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
         lOsc.connect(lGain);
         lGain.connect(this.ctx.destination);
@@ -687,20 +698,18 @@ class SoundSynthesizer {
 const sfx = new SoundSynthesizer();
 
 // ==========================================
-// 2. 遊戲狀態機與核心變數
+// 2. 遊戲狀態機與肉鴿晶片屬性
 // ==========================================
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 const videoElement = document.getElementById('webcam');
 const flashOverlay = document.getElementById('flash-overlay');
 const damageOverlay = document.getElementById('damage-overlay');
+const bulletTimeOverlay = document.getElementById('bullet-time-overlay');
 const scoreElem = document.getElementById('score');
 const comboElem = document.getElementById('combo');
 const hpBarFill = document.getElementById('hp-bar-fill');
-const hpText = document.getElementById('hp-text');
-const weaponBadge = document.getElementById('weapon-badge');
-const weaponIcon = document.getElementById('weapon-icon');
-const weaponName = document.getElementById('weapon-name');
+const perksInventory = document.getElementById('perks-inventory');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 const bgmToggleBtn = document.getElementById('bgm-toggle-btn');
@@ -715,13 +724,20 @@ let isGameOver = false;
 let maxHp = 100;
 let currentHp = 100;
 let score = 0;
+let killCount = 0;
 let combo = 0;
 let lastHitTime = 0;
+let hasNanoShield = false; // 奈米護盾可抵擋一次自爆撞擊
 
-// 當前武器狀態：'PISTOL' (手槍) 或 'SHOTGUN' (雙管霰彈槍)
+// 肉鴿晶片技能狀態 (Active Perks)
+const activePerks = {
+  teslaChain: false,   // ⚡ 連環高壓電弧
+  clusterBomb: false,  // 💥 高爆穿透核彈
+  bulletTimeTimer: 0   // ⏱️ 子彈時間剩餘時間
+};
+
+// 手勢與武器狀態
 let currentWeapon = 'PISTOL';
-
-// 手勢狀態
 let isGunDetected = false;
 let isThumbReady = false;
 let lastFireTime = 0;
@@ -734,10 +750,12 @@ let prevThumbDist = 0.5;
 let particles = [];
 let floatingTexts = [];
 let laserBeams = [];
+let lightningBolts = [];
 let screenShake = 0;
 
-// 敵人群體
+// 敵人與浮動肉鴿晶片
 let enemies = [];
+let floatingChips = [];
 let nextSpawnTime = 0;
 
 function resizeCanvas() {
@@ -748,7 +766,133 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ==========================================
-// 3. 敵人類別：普通巡航無人機 & 自爆衝鋒無人機
+// 3. 肉鴿晶片類別：浮動晶片箱 (射擊拾取)
+// ==========================================
+const PERK_DEFINITIONS = [
+  { id: 'tesla', name: '⚡ 連環電弧', desc: '擊殺連鎖彈射', color: '#00f0ff' },
+  { id: 'cluster', name: '💥 穿透高爆', desc: '子彈貫穿並引發AOE', color: '#ff9900' },
+  { id: 'chrono', name: '⏱️ 子彈時間', desc: '進入6秒時空減速', color: '#00ff88' },
+  { id: 'nano', name: '🛡️ 奈米護盾', desc: '回血40並獲得抵擋盾', color: '#ff00aa' }
+];
+
+class FloatingChip {
+  constructor(def, x, y) {
+    this.def = def;
+    this.x = x;
+    this.y = y;
+    this.radius = 32;
+    this.vy = 0.6; // 緩慢在空中懸浮漂浮
+    this.angle = 0;
+    this.alpha = 1;
+    this.isDead = false;
+  }
+
+  update(dt) {
+    this.y += this.vy;
+    this.angle += 0.04;
+    // 浮出螢幕下方時自毀
+    if (this.y > canvas.height + 60) this.isDead = true;
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // 外層旋轉全息六角環
+    ctx.rotate(this.angle);
+    ctx.strokeStyle = this.def.color;
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = this.def.color;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      const px = Math.cos(a) * this.radius;
+      const py = Math.sin(a) * this.radius;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // 內層微光晶片卡
+    ctx.rotate(-this.angle * 2);
+    ctx.fillStyle = 'rgba(10, 20, 40, 0.75)';
+    ctx.fillRect(-18, -18, 36, 36);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-18, -18, 36, 36);
+
+    // 核心圖示
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(this.def.name.slice(0, 2), 0, 0);
+
+    // 懸浮標題指示
+    ctx.font = '900 11px sans-serif';
+    ctx.fillStyle = this.def.color;
+    ctx.fillText(this.def.name, 0, -this.radius - 8);
+    ctx.font = '800 9px sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.fillText('SHOOT TO EQUIP', 0, this.radius + 12);
+
+    ctx.restore();
+  }
+}
+
+// 掉落肉鴿晶片
+function spawnPerkDrop() {
+  const available = PERK_DEFINITIONS.filter(p => !activePerks[p.id] || p.id === 'chrono' || p.id === 'nano');
+  if (available.length === 0) return;
+
+  // 隨機選 2 個晶片掉落
+  const picked = [...available].sort(() => 0.5 - Math.random()).slice(0, 2);
+  picked.forEach((p, index) => {
+    const posX = canvas.width * (0.35 + index * 0.3);
+    const posY = 50 + Math.random() * 40;
+    floatingChips.push(new FloatingChip(p, posX, posY));
+  });
+
+  spawnFloatingText('⚡ CHIP SYNCHRONIZING...', canvas.width * 0.5, 90, '#00f0ff');
+}
+
+// 裝備晶片生效
+function equipPerk(def) {
+  sfx.playUpgradeSound();
+
+  if (def.id === 'tesla') {
+    activePerks.teslaChain = true;
+    addPerkBadge('⚡ 電弧');
+  } else if (def.id === 'cluster') {
+    activePerks.clusterBomb = true;
+    addPerkBadge('💥 穿透高爆');
+  } else if (def.id === 'chrono') {
+    // 啟動 6 秒子彈時間
+    activePerks.bulletTimeTimer = 6.0;
+    bulletTimeOverlay.style.opacity = '1';
+    sfx.isBulletTime = true;
+    spawnFloatingText('⏱️ BULLET TIME ACTIVATED!', canvas.width * 0.5, canvas.height * 0.4, '#00ff88');
+  } else if (def.id === 'nano') {
+    currentHp = Math.min(maxHp, currentHp + 40);
+    hasNanoShield = true;
+    updateHpUI();
+    addPerkBadge('🛡️ 護盾');
+    spawnFloatingText('+40 HP & SHIELD!', canvas.width * 0.5, canvas.height * 0.4, '#ff00aa');
+  }
+}
+
+function addPerkBadge(text) {
+  const pill = document.createElement('div');
+  pill.className = 'perk-pill';
+  pill.innerText = text;
+  perksInventory.appendChild(pill);
+}
+
+// ==========================================
+// 4. 敵人類別 (受子彈時間時間流速影響)
 // ==========================================
 class NormalDrone {
   constructor() {
@@ -763,10 +907,11 @@ class NormalDrone {
     this.hoverOffset = Math.random() * Math.PI * 2;
   }
 
-  update(dt) {
-    this.x += (this.targetX - this.x) * 0.04;
-    this.y += (this.targetY - this.y) * 0.04;
-    this.angle += 0.03;
+  update(dt, timeScale) {
+    this.x += (this.targetX - this.x) * (0.04 * timeScale);
+    this.y += (this.targetY - this.y) * (0.04 * timeScale);
+    this.angle += 0.03 * timeScale;
+    return false;
   }
 
   draw(ctx) {
@@ -774,7 +919,6 @@ class NormalDrone {
     ctx.save();
     ctx.translate(this.x, hoverY);
 
-    // 外環
     ctx.rotate(this.angle);
     ctx.strokeStyle = '#00f0ff';
     ctx.lineWidth = 2.5;
@@ -783,7 +927,6 @@ class NormalDrone {
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 核心
     ctx.rotate(-this.angle * 2);
     ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
     ctx.beginPath();
@@ -806,53 +949,59 @@ class NormalDrone {
   }
 }
 
-// ⚠️ 自爆無人機 (Kamikaze Drone)
 class KamikazeDrone {
   constructor() {
     this.type = 'KAMIKAZE';
     this.radius = 28;
     this.x = canvas.width * 0.2 + Math.random() * (canvas.width * 0.6);
     this.y = -60;
-    // 鎖定玩家鏡頭中心
     this.targetX = canvas.width * 0.5 + (Math.random() - 0.5) * 120;
     this.targetY = canvas.height * 0.55;
     this.speed = 2.8 + Math.random() * 2.0;
-    this.hp = 2; // 稍微耐打一點點
+    this.hp = 2;
     this.angle = 0;
     this.beepTimer = 0;
-    this.scale = 0.6; // 從遠處看起來小，靠近時放大
+    this.scale = 0.6;
   }
 
-  update(dt) {
-    this.angle += 0.12; // 快速自旋
+  update(dt, timeScale) {
+    this.angle += 0.12 * timeScale;
 
-    // 沿直線加速撲向玩家螢幕
     const dx = this.targetX - this.x;
     const dy = this.targetY - this.y;
     const dist = Math.hypot(dx, dy);
 
-    this.x += (dx / dist) * this.speed * 2.2;
-    this.y += (dy / dist) * this.speed * 2.2;
-    this.speed += 0.05; // 持續加速！
-    this.scale = Math.min(2.4, this.scale + 0.015); // 視覺衝刺放大
+    this.x += (dx / dist) * this.speed * 2.2 * timeScale;
+    this.y += (dy / dist) * this.speed * 2.2 * timeScale;
+    this.speed += 0.05 * timeScale;
+    this.scale = Math.min(2.4, this.scale + 0.015 * timeScale);
 
-    // 接近時發出急促嗶嗶聲
-    this.beepTimer += dt;
+    this.beepTimer += dt * timeScale;
     if (this.beepTimer > 0.35) {
       this.beepTimer = 0;
       sfx.playAlertBeep();
     }
 
-    // 撞擊玩家判定 (到達屏幕中央附近)
     if (dist < 35 || this.y > canvas.height * 0.65) {
       this.detonateOnPlayer();
-      return true; // 標記已移除
+      return true;
     }
     return false;
   }
 
   detonateOnPlayer() {
-    // 玩家扣 20 血
+    if (hasNanoShield) {
+      // 護盾抵擋！
+      hasNanoShield = false;
+      sfx.playExplosion();
+      spawnExplosion(this.x, this.y, '#00f0ff');
+      spawnFloatingText('🛡️ SHIELD BLOCKED!', canvas.width * 0.5, canvas.height * 0.5, '#00f0ff');
+      // 移除護盾徽章
+      const pills = perksInventory.querySelectorAll('.perk-pill');
+      pills.forEach(p => { if (p.innerText.includes('護盾')) p.remove(); });
+      return;
+    }
+
     applyDamage(20);
     spawnExplosion(this.x, this.y, '#ff0033');
     sfx.playHurtSound();
@@ -863,7 +1012,6 @@ class KamikazeDrone {
     ctx.translate(this.x, this.y);
     ctx.scale(this.scale, this.scale);
 
-    // 尖銳危險旋轉刺
     ctx.rotate(this.angle);
     ctx.fillStyle = '#ff0033';
     ctx.shadowColor = '#ff0000';
@@ -879,7 +1027,6 @@ class KamikazeDrone {
       ctx.fill();
     }
 
-    // 核心警示光球 (閃爍)
     const flash = Math.sin(Date.now() * 0.02) > 0 ? '#ffea00' : '#ff0000';
     ctx.fillStyle = flash;
     ctx.beginPath();
@@ -895,54 +1042,52 @@ class KamikazeDrone {
   }
 }
 
-// 扣血邏輯
 function applyDamage(amount) {
   if (isGameOver) return;
   currentHp = Math.max(0, currentHp - amount);
   updateHpUI();
 
-  // 螢幕泛紅與受傷震動
   damageOverlay.style.opacity = '1';
   screenShake = 22;
   setTimeout(() => { damageOverlay.style.opacity = '0'; }, 180);
 
-  if (navigator.vibrate) {
-    navigator.vibrate([80, 50, 100]);
-  }
-
-  if (currentHp <= 0) {
-    triggerGameOver();
-  }
+  if (navigator.vibrate) navigator.vibrate([80, 50, 100]);
+  if (currentHp <= 0) triggerGameOver();
 }
 
 function updateHpUI() {
   const pct = Math.max(0, (currentHp / maxHp) * 100);
   hpBarFill.style.width = pct + '%';
-  hpText.innerText = `${currentHp}/${maxHp}`;
-
-  if (pct < 30) {
-    hpBarFill.style.background = '#ff0033';
-  } else if (pct < 60) {
-    hpBarFill.style.background = '#ffaa00';
-  } else {
-    hpBarFill.style.background = 'linear-gradient(90deg, #ff0055, #00ff88)';
-  }
+  if (pct < 30) hpBarFill.style.background = '#ff0033';
+  else if (pct < 60) hpBarFill.style.background = '#ffaa00';
+  else hpBarFill.style.background = 'linear-gradient(90deg, #ff0055, #00ff88)';
 }
 
 function triggerGameOver() {
   isGameOver = true;
   sfx.stopBgm();
-  gameOverStats.innerText = `FINAL SCORE: ${score} · COMBO: ${combo}`;
+  gameOverStats.innerText = `FINAL SCORE: ${score} · KILLS: ${killCount}`;
   gameOverModal.style.display = 'flex';
 }
 
 function restartGame() {
   currentHp = maxHp;
   score = 0;
+  killCount = 0;
   combo = 0;
   enemies = [];
+  floatingChips = [];
   particles = [];
   laserBeams = [];
+  lightningBolts = [];
+  activePerks.teslaChain = false;
+  activePerks.clusterBomb = false;
+  activePerks.bulletTimeTimer = 0;
+  hasNanoShield = false;
+  perksInventory.innerHTML = '';
+  bulletTimeOverlay.style.opacity = '0';
+  sfx.isBulletTime = false;
+
   isGameOver = false;
   scoreElem.innerText = score;
   updateHpUI();
@@ -950,9 +1095,8 @@ function restartGame() {
   sfx.startBgm();
 }
 
-// 粒子與浮動文字
 function spawnExplosion(x, y, color = '#ff0055') {
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 26; i++) {
     const speed = 3 + Math.random() * 8;
     const ang = Math.random() * Math.PI * 2;
     particles.push({
@@ -972,8 +1116,42 @@ function spawnFloatingText(text, x, y, color = '#ffdd00') {
   floatingTexts.push({ text, x, y, alpha: 1, vy: -2.5, color });
 }
 
+// ⚡ 閃電電弧連鎖 (Tesla Chain)
+function triggerTeslaChain(originEnemy) {
+  sfx.playTeslaSound();
+  let chained = 0;
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const target = enemies[i];
+    if (target === originEnemy) continue;
+
+    const d = Math.hypot(target.x - originEnemy.x, target.y - originEnemy.y);
+    if (d < 300) {
+      // 繪製閃電
+      lightningBolts.push({
+        x1: originEnemy.x, y1: originEnemy.y,
+        x2: target.x, y2: target.y,
+        alpha: 1
+      });
+
+      target.hp -= 2;
+      if (target.hp <= 0) {
+        sfx.playExplosion();
+        spawnExplosion(target.x, target.y, '#00f0ff');
+        enemies.splice(i, 1);
+        score += 150 * combo;
+        scoreElem.innerText = score;
+        spawnFloatingText('⚡ TESLA KILL!', target.x, target.y, '#00f0ff');
+      }
+
+      chained++;
+      if (chained >= 2) break; // 最多連鎖 2 隻
+    }
+  }
+}
+
 // ==========================================
-// 4. 射擊系統：手槍單發 VS 雙指霰彈 5 連發
+// 5. 射擊系統 (支援肉鴿高爆穿透 & 射擊撿晶片)
 // ==========================================
 function executeFire(originX, originY, targetX, targetY) {
   const now = Date.now();
@@ -983,7 +1161,6 @@ function executeFire(originX, originY, targetX, targetY) {
   if (now - lastFireTime < cooldown) return;
   lastFireTime = now;
 
-  // 1. 音效與震動
   if (isShotgun) {
     sfx.playShotgun();
     screenShake = 18;
@@ -998,11 +1175,23 @@ function executeFire(originX, originY, targetX, targetY) {
     if (navigator.vibrate) navigator.vibrate([30]);
   }
 
-  // 2. 構建射擊彈道 (手槍 1 發，霰彈槍 5 發擴散彈)
+  // 1. 射擊拾取肉鴿晶片檢測 (Shoot-to-Equip)
+  for (let i = floatingChips.length - 1; i >= 0; i--) {
+    const chip = floatingChips[i];
+    const dist = Math.hypot(targetX - chip.x, targetY - chip.y);
+    if (dist < chip.radius + 25) {
+      equipPerk(chip.def);
+      spawnExplosion(chip.x, chip.y, chip.def.color);
+      floatingChips.splice(i, 1);
+      return; // 晶片吸附成功
+    }
+  }
+
+  // 2. 構建射擊彈道
   const pellets = [];
   if (isShotgun) {
     const baseAngle = Math.atan2(targetY - originY, targetX - originX);
-    const spreadAngles = [-0.22, -0.11, 0, 0.11, 0.22]; // 扇形擴散
+    const spreadAngles = [-0.22, -0.11, 0, 0.11, 0.22];
     const len = Math.hypot(targetX - originX, targetY - originY) || 300;
 
     for (let offset of spreadAngles) {
@@ -1010,14 +1199,18 @@ function executeFire(originX, originY, targetX, targetY) {
       pellets.push({
         tx: originX + Math.cos(ang) * len,
         ty: originY + Math.sin(ang) * len,
-        color: '#ff9900'
+        color: activePerks.clusterBomb ? '#ff3300' : '#ff9900'
       });
     }
   } else {
-    pellets.push({ tx: targetX, ty: targetY, color: '#00f0ff' });
+    pellets.push({
+      tx: targetX,
+      ty: targetY,
+      color: activePerks.clusterBomb ? '#ff3300' : '#00f0ff'
+    });
   }
 
-  // 3. 繪製雷射並執行碰撞判定
+  // 3. 繪製雷射與穿透判定
   for (let p of pellets) {
     laserBeams.push({
       x1: originX, y1: originY,
@@ -1026,19 +1219,28 @@ function executeFire(originX, originY, targetX, targetY) {
       alpha: 1
     });
 
-    // 命中檢測
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       const dist = Math.hypot(p.tx - e.x, p.ty - e.y);
       if (dist < e.radius + 24) {
-        e.hp -= 1;
+        e.hp -= (activePerks.clusterBomb ? 2 : 1);
         sfx.playHitSound();
+
+        // 💥 高爆穿透 AOE
+        if (activePerks.clusterBomb) {
+          spawnExplosion(p.tx, p.ty, '#ff5500');
+        }
 
         if (e.hp <= 0) {
           sfx.playExplosion();
           spawnExplosion(e.x, e.y, e.type === 'KAMIKAZE' ? '#ff3300' : '#00ffff');
 
-          // 計分與連擊
+          // ⚡ 連環高壓電弧觸發
+          if (activePerks.teslaChain) {
+            triggerTeslaChain(e);
+          }
+
+          killCount++;
           if (now - lastHitTime < 2500) combo++;
           else combo = 1;
           lastHitTime = now;
@@ -1049,14 +1251,22 @@ function executeFire(originX, originY, targetX, targetY) {
           scoreElem.innerText = score;
 
           if (combo > 1) {
-            comboElem.innerText = `${combo}x COMBO!`;
+            comboElem.innerText = `${combo}x`;
             comboElem.classList.add('active');
           }
 
           spawnFloatingText(`+${points}`, e.x, e.y, e.type === 'KAMIKAZE' ? '#ffaa00' : '#00ff88');
           enemies.splice(i, 1);
+
+          // 🎁 每滿 7 殺掉落一次肉鴿晶片！
+          if (killCount % 7 === 0) {
+            spawnPerkDrop();
+          }
         }
-        break; // 該顆彈丸已被消耗
+
+        if (!activePerks.clusterBomb) {
+          break; // 若沒有穿透技能，子彈被消耗
+        }
       }
     }
   }
@@ -1072,7 +1282,7 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // ==========================================
-// 5. MediaPipe 手勢辨識 (雙武器模式切換)
+// 6. MediaPipe 手勢辨識
 // ==========================================
 function onResults(results) {
   if (isGameOver) return;
@@ -1087,8 +1297,6 @@ function onResults(results) {
   }
 
   const landmarks = results.multiHandLandmarks[0];
-
-  // 畫布座標轉換
   const pts = landmarks.map(p => ({
     x: (currentFacingMode === 'user' ? (1 - p.x) : p.x) * canvas.width,
     y: p.y * canvas.height,
@@ -1100,25 +1308,13 @@ function onResults(results) {
   const palmSize = dist(0, 5) || 100;
   if (palmSize < 25) return;
 
-  // 1. 食指伸展判定 (Index)
   const isIndexStraight = dist(8, 5) > dist(6, 5) * 1.5;
-
-  // 2. 中指伸展判定 (Middle) -> 判定是手槍還是霰彈槍！
   const isMiddleStraight = dist(12, 9) > dist(10, 9) * 1.45 && dist(12, 0) > dist(8, 0) * 0.8;
 
-  // 判斷武器模式
   if (isIndexStraight && isMiddleStraight) {
-    // 💥 雙指伸展 -> SHOTGUN 雙管霰彈槍
     currentWeapon = 'SHOTGUN';
-    weaponBadge.className = 'weapon-badge shotgun';
-    weaponIcon.innerText = '💥';
-    weaponName.innerText = 'SHOTGUN (雙指)';
   } else if (isIndexStraight) {
-    // 🔫 單指伸展 -> PISTOL 手槍
     currentWeapon = 'PISTOL';
-    weaponBadge.className = 'weapon-badge';
-    weaponIcon.innerText = '🔫';
-    weaponName.innerText = 'PISTOL (單指)';
   }
 
   const isGunPose = isIndexStraight;
@@ -1127,10 +1323,8 @@ function onResults(results) {
     isGunDetected = true;
     gunCrosshair.active = true;
 
-    // 槍口位置取食指尖 (8)
     muzzlePos = { x: pts[8].x, y: pts[8].y };
 
-    // 準星朝指尖前方延伸
     const dirX = pts[8].x - pts[6].x;
     const dirY = pts[8].y - pts[6].y;
     const dirLen = Math.hypot(dirX, dirY) || 1;
@@ -1138,7 +1332,6 @@ function onResults(results) {
     gunCrosshair.targetX = pts[8].x + (dirX / dirLen) * 140;
     gunCrosshair.targetY = pts[8].y + (dirY / dirLen) * 140;
 
-    // 3. 扣扳機射擊判定 (大拇指尖 4 相對食指根部 5)
     const thumbDist = dist(4, 5) / palmSize;
     const thumbSpeed = prevThumbDist - thumbDist;
     prevThumbDist = thumbDist;
@@ -1166,7 +1359,7 @@ function onResults(results) {
 }
 
 // ==========================================
-// 6. 主遊戲循環 (繪圖與邏輯更新)
+// 7. 主遊戲循環 (繪圖、物理與子彈時間)
 // ==========================================
 let lastTime = performance.now();
 function gameLoop() {
@@ -1174,14 +1367,23 @@ function gameLoop() {
   const dt = (now - lastTime) / 1000;
   lastTime = now;
 
+  // ⏱️ 子彈時間倒數計算
+  let timeScale = 1.0;
+  if (activePerks.bulletTimeTimer > 0) {
+    activePerks.bulletTimeTimer -= dt;
+    timeScale = 0.28; // 速度降低 72%
+    if (activePerks.bulletTimeTimer <= 0) {
+      bulletTimeOverlay.style.opacity = '0';
+      sfx.isBulletTime = false;
+    }
+  }
+
   if (!isGameOver) {
-    // 連擊冷卻計時
     if (combo > 0 && Date.now() - lastHitTime > 3000) {
       combo = 0;
       comboElem.classList.remove('active');
     }
 
-    // 敵人動態生成：70% 機率普通怪，30% 機率自爆怪
     if (enemies.length < 4 && Date.now() > nextSpawnTime) {
       if (Math.random() < 0.35) {
         enemies.push(new KamikazeDrone());
@@ -1194,14 +1396,19 @@ function gameLoop() {
     // 更新敵人
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-      const shouldRemove = e.update(dt);
-      if (shouldRemove) {
-        enemies.splice(i, 1);
-      }
+      const shouldRemove = e.update(dt, timeScale);
+      if (shouldRemove) enemies.splice(i, 1);
+    }
+
+    // 更新浮動肉鴿晶片
+    for (let i = floatingChips.length - 1; i >= 0; i--) {
+      const chip = floatingChips[i];
+      chip.update(dt);
+      if (chip.isDead) floatingChips.splice(i, 1);
     }
   }
 
-  // 螢幕震動計算
+  // 螢幕震動
   ctx.save();
   if (screenShake > 0) {
     const rx = (Math.random() - 0.5) * screenShake;
@@ -1221,13 +1428,13 @@ function gameLoop() {
     ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
     ctx.restore();
 
-    // 暗角漸變
+    // 輕量暗角
     const vignette = ctx.createRadialGradient(
-      canvas.width / 2, canvas.height / 2, canvas.width * 0.3,
+      canvas.width / 2, canvas.height / 2, canvas.width * 0.35,
       canvas.width / 2, canvas.height / 2, canvas.width * 0.75
     );
     vignette.addColorStop(0, 'rgba(0,0,0,0)');
-    vignette.addColorStop(1, 'rgba(5, 10, 25, 0.55)');
+    vignette.addColorStop(1, 'rgba(5, 10, 25, 0.5)');
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   } else {
@@ -1235,12 +1442,39 @@ function gameLoop() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  // 2. 繪製所有敵人
+  // 2. 繪製浮動肉鴿晶片箱
+  for (let chip of floatingChips) {
+    chip.draw(ctx);
+  }
+
+  // 3. 繪製所有敵人
   for (let e of enemies) {
     e.draw(ctx);
   }
 
-  // 3. 繪製雷射光束
+  // 4. 繪製閃電電弧
+  for (let i = lightningBolts.length - 1; i >= 0; i--) {
+    const bolt = lightningBolts[i];
+    ctx.save();
+    ctx.strokeStyle = `rgba(0, 240, 255, ${bolt.alpha})`;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.moveTo(bolt.x1, bolt.y1);
+    // 鋸齒折線
+    const midX = (bolt.x1 + bolt.x2) / 2 + (Math.random() - 0.5) * 35;
+    const midY = (bolt.y1 + bolt.y2) / 2 + (Math.random() - 0.5) * 35;
+    ctx.lineTo(midX, midY);
+    ctx.lineTo(bolt.x2, bolt.y2);
+    ctx.stroke();
+    ctx.restore();
+
+    bolt.alpha -= 0.15;
+    if (bolt.alpha <= 0) lightningBolts.splice(i, 1);
+  }
+
+  // 5. 繪製雷射光束
   for (let i = laserBeams.length - 1; i >= 0; i--) {
     const beam = laserBeams[i];
     ctx.save();
@@ -1258,13 +1492,13 @@ function gameLoop() {
     if (beam.alpha <= 0) laserBeams.splice(i, 1);
   }
 
-  // 4. 繪製粒子碎片
+  // 6. 繪製粒子碎片
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += p.gravity;
-    p.alpha -= p.decay;
+    p.x += p.vx * timeScale;
+    p.y += p.vy * timeScale;
+    p.vy += p.gravity * timeScale;
+    p.alpha -= p.decay * timeScale;
 
     ctx.save();
     ctx.fillStyle = p.color;
@@ -1279,16 +1513,16 @@ function gameLoop() {
     if (p.alpha <= 0) particles.splice(i, 1);
   }
 
-  // 5. 繪製浮動文字
+  // 7. 繪製浮動文字
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
     const ft = floatingTexts[i];
-    ft.y += ft.vy;
-    ft.alpha -= 0.025;
+    ft.y += ft.vy * timeScale;
+    ft.alpha -= 0.025 * timeScale;
 
     ctx.save();
     ctx.globalAlpha = Math.max(0, ft.alpha);
     ctx.fillStyle = ft.color;
-    ctx.font = '900 22px sans-serif';
+    ctx.font = '900 20px sans-serif';
     ctx.textAlign = 'center';
     ctx.shadowColor = ft.color;
     ctx.shadowBlur = 10;
@@ -1298,7 +1532,7 @@ function gameLoop() {
     if (ft.alpha <= 0) floatingTexts.splice(i, 1);
   }
 
-  // 6. 繪製霓虹手部骨架
+  // 8. 繪製霓虹手部骨架
   if (currentHandLandmarks) {
     const pts = currentHandLandmarks;
     ctx.save();
@@ -1318,16 +1552,12 @@ function gameLoop() {
       ctx.stroke();
     }
 
-    // 關節光點
     ctx.fillStyle = currentWeapon === 'SHOTGUN' ? '#ffaa00' : '#00f0ff';
     ctx.beginPath();
     ctx.arc(pts[8].x, pts[8].y, 6, 0, Math.PI * 2);
-    if (currentWeapon === 'SHOTGUN') {
-      ctx.arc(pts[12].x, pts[12].y, 6, 0, Math.PI * 2);
-    }
+    if (currentWeapon === 'SHOTGUN') ctx.arc(pts[12].x, pts[12].y, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // 拇指 (扳機)
     ctx.fillStyle = isThumbReady ? '#00ff88' : '#ff4444';
     ctx.beginPath();
     ctx.arc(pts[4].x, pts[4].y, 6, 0, Math.PI * 2);
@@ -1335,7 +1565,7 @@ function gameLoop() {
     ctx.restore();
   }
 
-  // 7. 繪製準星 (手槍單環 / 霰彈槍雙環)
+  // 9. 繪製準星 (帶武器微標籤，釋放頂部視野)
   if (gunCrosshair.active) {
     if (gunCrosshair.x === -100) {
       gunCrosshair.x = gunCrosshair.targetX;
@@ -1359,13 +1589,11 @@ function gameLoop() {
     ctx.shadowColor = themeColor;
     ctx.shadowBlur = 12;
 
-    // 準星圓環
     ctx.beginPath();
     ctx.arc(0, 0, currentWeapon === 'SHOTGUN' ? 32 : 24, 0, Math.PI * 2);
     ctx.stroke();
 
     if (currentWeapon === 'SHOTGUN') {
-      // 霰彈槍專屬擴散標記點
       for (let i = 0; i < 4; i++) {
         ctx.rotate(Math.PI / 2);
         ctx.fillStyle = themeColor;
@@ -1375,7 +1603,6 @@ function gameLoop() {
       }
     }
 
-    // 十字瞄準線
     ctx.beginPath();
     ctx.moveTo(-35, 0); ctx.lineTo(-14, 0);
     ctx.moveTo(14, 0); ctx.lineTo(35, 0);
@@ -1383,15 +1610,14 @@ function gameLoop() {
     ctx.moveTo(0, 14); ctx.lineTo(0, 35);
     ctx.stroke();
 
-    // 狀態提示文字
+    // 準星下方微型武器與狀態標籤
     ctx.shadowBlur = 0;
     ctx.fillStyle = themeColor;
     ctx.font = '900 11px sans-serif';
     ctx.textAlign = 'center';
-    const statusLabel = isThumbReady 
-      ? (currentWeapon === 'SHOTGUN' ? '💥 SHOTGUN READY' : '⚡ PISTOL READY') 
-      : 'AIMING...';
-    ctx.fillText(statusLabel, 0, currentWeapon === 'SHOTGUN' ? 48 : 40);
+    const weaponLabel = currentWeapon === 'SHOTGUN' ? '💥 SHOTGUN' : '🔫 PISTOL';
+    const statusLabel = isThumbReady ? 'READY' : 'AIM';
+    ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, currentWeapon === 'SHOTGUN' ? 48 : 38);
 
     ctx.restore();
   }
@@ -1402,7 +1628,7 @@ function gameLoop() {
 }
 
 // ==========================================
-// 7. 初始化 MediaPipe Hands & 攝影機控制
+// 8. 初始化 MediaPipe Hands & 攝影機控制
 // ==========================================
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -1442,7 +1668,7 @@ document.getElementById('camera-flip-btn').addEventListener('click', (e) => {
 bgmToggleBtn.addEventListener('click', (e) => {
   e.stopPropagation();
   const isOn = sfx.toggleBgm();
-  bgmToggleBtn.innerText = isOn ? '🎵 BGM: ON' : '🔇 BGM: OFF';
+  bgmToggleBtn.innerText = isOn ? '🎵' : '🔇';
 });
 
 document.getElementById('start-btn').addEventListener('click', () => {
