@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR 4.0 | 巨型母艦 BOSS 戰</title>
+  <title>Cyber Finger-Gun AR 5.0 | 三大傳奇 BOSS 戰</title>
   <style>
     * {
       box-sizing: border-box;
@@ -415,18 +415,21 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 4.0</div>
+    <div class="modal-title">CYBER FINGER GUN 5.0</div>
     <div class="modal-desc">
-      極簡實景 FPS × 巨型母艦 BOSS 戰 × 肉鴿晶片！<br>
-      擊破 16 隻敵艦即觸發母艦空襲降臨！
+      極簡實景 FPS × 三大傳奇 BOSS 輪番登場 × 肉鴿晶片！<br>
+      手感純粹進化，大拇指靈活扣扳機，重疊絕不走火！
     </div>
     <div class="gesture-guide">
-      👉 <b>單指手槍</b>：食指伸直瞄準，向下扣動大拇指開火！<br>
-      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發擴散！<br>
-      🛸 <b>母艦 BOSS 戰</b>：擊破 16 隻天降母艦，先破兩翼再炸核心！<br>
-      🎁 <b>射擊拾取晶片</b>：瞄準空中發光晶片開槍，直接升級！
+      👉 <b>單指手槍</b>：食指瞄準，向下扣動大拇指開火！<br>
+      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發大範圍覆蓋！<br>
+      👑 <b>三大傳奇 BOSS 輪番降臨</b>：<br>
+      &nbsp;&nbsp;1. 🛸 15 殺：<b>巡洋母艦</b> (轟碎兩翼浮游護盾，直擊核心)<br>
+      &nbsp;&nbsp;2. 🕷️ 35 殺：<b>虛空機械巨蛛</b> (打斷4隻蛛腿使其癱瘓3倍暴擊)<br>
+      &nbsp;&nbsp;3. 👁️ 60 殺：<b>終焉天罰星核</b> (雙旋轉星環護盾，穿透轟殺)<br>
+      🎁 <b>射擊拾取晶片</b>：打爆空中懸浮晶片，固定 4 格無遮擋升級！
     </div>
-    <button id="start-btn" class="action-btn">開啟相機 & BGM 開始戰鬥</button>
+    <button id="start-btn" class="action-btn">開啟相機 & BGM 開始挑戰</button>
   </div>
 
   <!-- Game Over 結算視窗 -->
@@ -853,6 +856,7 @@ let screenShake = 0;
 let enemies = [];
 let floatingChips = [];
 let currentBoss = null;
+let bossPhase = 0; // 0: 母艦, 1: 機械巨蛛, 2: 終焉星核
 let bossTriggered = false;
 let nextSpawnTime = 0;
 
@@ -1148,19 +1152,31 @@ class KamikazeDrone {
   }
 }
 
-// ⚠️ 觸發 BOSS 戰
+// 👑 BOSS 階段與管理器 (多 BOSS 輪替)
+// bossPhase: 0: 準備打 BOSS 1, 1: 準備打 BOSS 2, 2: 準備打 BOSS 3
+
+// ⚠️ 觸發 BOSS 戰 (根據階段派發不同傳奇 BOSS)
 function triggerBossFight() {
   bossTriggered = true;
   sfx.playBossAlert();
   const banner = document.getElementById('boss-warning-banner');
+
+  let bossName = '';
+  if (bossPhase === 0) bossName = 'CYBER DREADNOUGHT (巨型巡洋母艦)';
+  else if (bossPhase === 1) bossName = 'VOID MECHA-ARACHNID (虛空機械巨蛛)';
+  else bossName = 'OUROBOROS CELESTIAL CORE (終焉天罰星核)';
+
   if (banner) {
+    banner.innerText = `⚠️ WARNING: ${bossName} ⚠️`;
     banner.classList.add('active');
-    setTimeout(() => { banner.classList.remove('active'); }, 3000);
+    setTimeout(() => { banner.classList.remove('active'); }, 3200);
   }
-  screenShake = 25;
-  // 3 秒後母艦降臨
+  screenShake = 26;
+
   setTimeout(() => {
-    currentBoss = new CyberDreadnought();
+    if (bossPhase === 0) currentBoss = new CyberDreadnought();
+    else if (bossPhase === 1) currentBoss = new MechaArachnid();
+    else currentBoss = new OuroborosCore();
   }, 1200);
 }
 
@@ -1169,29 +1185,48 @@ function destroyBoss() {
   if (!currentBoss) return;
   const bx = currentBoss.x;
   const by = currentBoss.y;
+  const phase = bossPhase;
   currentBoss = null;
 
   // 連續連鎖大核爆
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 8; i++) {
     setTimeout(() => {
       sfx.playExplosion();
-      screenShake = 24;
+      screenShake = 25;
       flashOverlay.style.opacity = '1';
       setTimeout(() => { flashOverlay.style.opacity = '0'; }, 80);
-      spawnExplosion(bx + (Math.random() - 0.5) * 220, by + (Math.random() - 0.5) * 60, '#ff9900');
-      spawnExplosion(bx + (Math.random() - 0.5) * 160, by + (Math.random() - 0.5) * 50, '#ff0055');
-    }, i * 200);
+      spawnExplosion(bx + (Math.random() - 0.5) * 240, by + (Math.random() - 0.5) * 70, '#ff9900');
+      spawnExplosion(bx + (Math.random() - 0.5) * 180, by + (Math.random() - 0.5) * 60, '#ff0055');
+    }, i * 180);
   }
 
-  // 加 3000 分與大量肉鴿晶片掉落
+  // 結算與晉級下一個 BOSS 階段
   setTimeout(() => {
-    score += 3000;
+    let rewardPoints = 3000;
+    let label = '';
+    if (phase === 0) {
+      rewardPoints = 3000;
+      label = '🏆 DREADNOUGHT DESTROYED! +3000';
+    } else if (phase === 1) {
+      rewardPoints = 4000;
+      label = '🏆 MECHA-ARACHNID EXTERMINATED! +4000';
+    } else {
+      rewardPoints = 5000;
+      label = '👑 OUROBOROS CORE OBLITERATED! +5000';
+    }
+
+    score += rewardPoints;
     scoreElem.innerText = score;
-    spawnFloatingText('🏆 DREADNOUGHT DESTROYED! +3000', canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
-    // 空投 3 個金色晶片
+    spawnFloatingText(label, canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
+
+    // 空投多個金色晶片
     spawnPerkDrop();
     spawnPerkDrop();
-  }, 1400);
+
+    // 晉級下一個 BOSS 階段
+    bossPhase = (bossPhase + 1) % 3;
+    bossTriggered = false; // 解鎖下一場 BOSS 戰
+  }, 1500);
 }
 class EnemyBullet {
   constructor(x, y, targetX, targetY) {
@@ -1386,6 +1421,367 @@ class CyberDreadnought {
 
     ctx.restore();
   }
+
+  // 命中判定
+  onHit(tx, ty, damage) {
+    const bx = this.x;
+    const by = this.y;
+
+    if (this.leftCore.alive) {
+      const lx = bx + this.leftCore.relX;
+      const ly = by + this.leftCore.relY;
+      if (Math.hypot(tx - lx, ty - ly) < this.leftCore.radius + 20) {
+        this.leftCore.hp -= damage;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#00f0ff');
+        if (this.leftCore.hp <= 0) {
+          this.leftCore.alive = false;
+          sfx.playExplosion();
+          spawnExplosion(lx, ly, '#ff9900');
+          spawnFloatingText('L-CORE DESTROYED!', lx, ly, '#ffdd00');
+        }
+        return true;
+      }
+    }
+
+    if (this.rightCore.alive) {
+      const rx = bx + this.rightCore.relX;
+      const ry = by + this.rightCore.relY;
+      if (Math.hypot(tx - rx, ty - ry) < this.rightCore.radius + 20) {
+        this.rightCore.hp -= damage;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#00f0ff');
+        if (this.rightCore.hp <= 0) {
+          this.rightCore.alive = false;
+          sfx.playExplosion();
+          spawnExplosion(rx, ry, '#ff9900');
+          spawnFloatingText('R-CORE DESTROYED!', rx, ry, '#ffdd00');
+        }
+        return true;
+      }
+    }
+
+    const mx = bx + this.mainReactor.relX;
+    const my = by + this.mainReactor.relY;
+    if (Math.hypot(tx - mx, ty - my) < this.mainReactor.radius + 24) {
+      const shieldActive = this.leftCore.alive || this.rightCore.alive;
+      if (shieldActive) {
+        spawnFloatingText('🛡️ IMMUNE! (先破壞兩翼核心)', mx, my, '#00f0ff');
+        sfx.playHitSound();
+      } else {
+        this.mainReactor.hp -= damage * 2;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#ff3300');
+        spawnFloatingText(`CRITICAL! -${damage * 2}`, mx, my, '#ff0055');
+        if (this.mainReactor.hp <= 0) {
+          destroyBoss();
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// 🕷️ BOSS 2：虛空機械巨蛛 (Void Mecha-Arachnid)
+class MechaArachnid {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -120;
+    this.targetY = 120;
+    this.swingTime = 0;
+    this.shootTimer = 0;
+    this.hp = 30;
+    this.maxHp = 30;
+    this.radius = 32;
+
+    // 4 隻機械蛛腿 (可被各別打斷)
+    this.legs = [
+      { relX: -80, relY: -20, hp: 6, maxHp: 6, alive: true },
+      { relX: -45, relY: -35, hp: 6, maxHp: 6, alive: true },
+      { relX: 45, relY: -35, hp: 6, maxHp: 6, alive: true },
+      { relX: 80, relY: -20, hp: 6, maxHp: 6, alive: true }
+    ];
+  }
+
+  update(dt, timeScale) {
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+    } else {
+      // 左右蜘蛛倒掛擺盪 (活著的腿越多，擺動越快)
+      const aliveLegCount = this.legs.filter(l => l.alive).length;
+      const speedMod = 0.5 + aliveLegCount * 0.25;
+      this.swingTime += dt * 2.2 * speedMod * timeScale;
+      this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.28);
+
+      // 噴射綠色電漿毒彈
+      this.shootTimer += dt * timeScale;
+      if (this.shootTimer > 2.0) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        // 噴出 3 顆毒彈
+        for (let offset of [-60, 0, 60]) {
+          enemyBullets.push(new EnemyBullet(this.x, this.y + 15, this.x + offset, canvas.height * 0.7));
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // 1. 繪製倒掛蛛絲
+    ctx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -this.y);
+    ctx.lineTo(0, -10);
+    ctx.stroke();
+
+    // 2. 繪製 4 隻機械關節蛛腿
+    for (let leg of this.legs) {
+      ctx.save();
+      if (leg.alive) {
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(leg.relX * 0.6, leg.relY - 20);
+        ctx.lineTo(leg.relX, leg.relY);
+        ctx.stroke();
+
+        // 關節點 (受擊部位)
+        ctx.fillStyle = '#ffdd00';
+        ctx.beginPath();
+        ctx.arc(leg.relX, leg.relY, 14, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 斷腿殘骸冒煙
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(leg.relX * 0.4, leg.relY * 0.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 3. 繪製中央複眼核心
+    const aliveLegCount = this.legs.filter(l => l.alive).length;
+    const eyeColor = aliveLegCount === 0 ? '#ff0033' : '#00ff88';
+
+    ctx.fillStyle = '#0a1a12';
+    ctx.strokeStyle = eyeColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = eyeColor;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(0, 5, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 複眼瞳孔 (脈動)
+    ctx.fillStyle = eyeColor;
+    ctx.beginPath();
+    ctx.arc(0, 5, this.radius * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 血條
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(-70, -this.radius - 22, 140, 7);
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(-70, -this.radius - 22, 140 * Math.max(0, this.hp / this.maxHp), 7);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(aliveLegCount === 0 ? 'PARALYZED (3X DAMAGE)' : `LEGS: ${aliveLegCount}/4`, 0, this.radius + 20);
+
+    ctx.restore();
+  }
+
+  onHit(tx, ty, damage) {
+    const bx = this.x;
+    const by = this.y;
+
+    // 先檢測是否打中任一條蛛腿
+    for (let leg of this.legs) {
+      if (leg.alive) {
+        const lx = bx + leg.relX;
+        const ly = by + leg.relY;
+        if (Math.hypot(tx - lx, ty - ly) < 22) {
+          leg.hp -= damage;
+          sfx.playHitSound();
+          spawnExplosion(tx, ty, '#00ff88');
+          if (leg.hp <= 0) {
+            leg.alive = false;
+            sfx.playExplosion();
+            spawnExplosion(lx, ly, '#ff9900');
+            spawnFloatingText('LEG SEVERED!', lx, ly, '#00ff88');
+          }
+          return true;
+        }
+      }
+    }
+
+    // 檢測打中中央複眼
+    if (Math.hypot(tx - bx, ty - (by + 5)) < this.radius + 18) {
+      const aliveLegCount = this.legs.filter(l => l.alive).length;
+      const multiplier = aliveLegCount === 0 ? 3 : 1; // 癱瘓時 3 倍傷害！
+      const finalDmg = damage * multiplier;
+      this.hp -= finalDmg;
+
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, '#ff0033');
+      spawnFloatingText(`-${finalDmg}!`, bx, by, '#ff0055');
+
+      if (this.hp <= 0) {
+        destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// 👁️ BOSS 3：終焉天罰星核 (Ouroboros Celestial Core)
+class OuroborosCore {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -130;
+    this.targetY = 135;
+    this.hp = 38;
+    this.maxHp = 38;
+    this.radius = 34;
+    this.ringAngle1 = 0;
+    this.ringAngle2 = 0;
+    this.shootTimer = 0;
+    this.summonTimer = 0;
+  }
+
+  update(dt, timeScale) {
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.03 * timeScale + 0.5;
+    } else {
+      // 雙環反向高速旋轉
+      this.ringAngle1 += 0.04 * timeScale;
+      this.ringAngle2 -= 0.06 * timeScale;
+
+      // 扇形 4 連發能量球
+      this.shootTimer += dt * timeScale;
+      if (this.shootTimer > 2.4) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        for (let ang of [-0.3, -0.1, 0.1, 0.3]) {
+          const b = new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 200, this.y + Math.cos(ang) * 200);
+          enemyBullets.push(b);
+        }
+      }
+
+      // 每 7 秒召喚 1 隻自爆衝鋒怪護衛
+      this.summonTimer += dt * timeScale;
+      if (this.summonTimer > 7.0 && enemies.length < 3) {
+        this.summonTimer = 0;
+        enemies.push(new KamikazeDrone());
+        spawnFloatingText('⚠️ MINION SUMMONED!', this.x, this.y + 45, '#ff0055');
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // 1. 外層順時針護盾環 (帶有擋子彈的幾何板塊)
+    ctx.save();
+    ctx.rotate(this.ringAngle1);
+    ctx.strokeStyle = '#00f0ff';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 15;
+    for (let i = 0; i < 4; i++) {
+      ctx.rotate(Math.PI / 2);
+      ctx.strokeRect(-55, -8, 25, 16);
+    }
+    ctx.restore();
+
+    // 2. 內層逆時針護盾環
+    ctx.save();
+    ctx.rotate(this.ringAngle2);
+    ctx.strokeStyle = '#ff00aa';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#ff00aa';
+    ctx.shadowBlur = 12;
+    for (let i = 0; i < 3; i++) {
+      ctx.rotate((Math.PI * 2) / 3);
+      ctx.beginPath();
+      ctx.arc(0, 42, 12, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. 中央終焉神核
+    ctx.fillStyle = '#fff';
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 25;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ff0055';
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 血條
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(-80, -this.radius - 28, 160, 8);
+    ctx.fillStyle = '#ff00aa';
+    ctx.fillRect(-80, -this.radius - 28, 160 * Math.max(0, this.hp / this.maxHp), 8);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('OUROBOROS CELESTIAL CORE', 0, -this.radius - 34);
+
+    ctx.restore();
+  }
+
+  onHit(tx, ty, damage) {
+    const bx = this.x;
+    const by = this.y;
+    const d = Math.hypot(tx - bx, ty - by);
+
+    // 護盾判定：若打在外環板塊角度區間且沒有穿透技能，有 40% 機率被擋開
+    const isPiercing = activePerks.clusterLevel > 0;
+    if (d > this.radius && d < 65 && !isPiercing) {
+      if (Math.random() < 0.45) {
+        sfx.playHitSound();
+        spawnFloatingText('🛡️ BLOCKED!', tx, ty, '#00f0ff');
+        return true;
+      }
+    }
+
+    // 擊中中央神核
+    if (d < this.radius + 20) {
+      this.hp -= damage;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, '#ff00aa');
+      spawnFloatingText(`CRITICAL! -${damage}`, bx, by, '#ff00aa');
+
+      if (this.hp <= 0) {
+        destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
 }
 
 function applyDamage(amount) {
@@ -1424,6 +1820,7 @@ function restartGame() {
   enemies = [];
   enemyBullets = [];
   currentBoss = null;
+  bossPhase = 0;
   bossTriggered = false;
   floatingChips = [];
   particles = [];
@@ -1622,8 +2019,9 @@ function executeFire(originX, originY, targetX, targetY) {
             spawnPerkDrop();
           }
 
-          // 👑 累計擊殺滿 16 隻觸發巨型母艦 BOSS 戰！
-          if (killCount >= 16 && !bossTriggered && !currentBoss) {
+          // 👑 多階段 BOSS 觸發：15殺(母艦) -> 35殺(機械巨蛛) -> 60殺(終焉星核)
+          const targetKills = bossPhase === 0 ? 15 : (bossPhase === 1 ? 35 : 60);
+          if (killCount >= targetKills && !bossTriggered && !currentBoss) {
             triggerBossFight();
           }
         }
@@ -1648,67 +2046,10 @@ function executeFire(originX, originY, targetX, targetY) {
       }
     }
 
-    // 5. 攻擊巨型母艦 BOSS 弱點判定
+    // 5. 攻擊當前登場的傳奇 BOSS 弱點判定
     if (currentBoss && currentBoss.y > 0) {
-      const bx = currentBoss.x;
-      const by = currentBoss.y;
       const damage = 1 + activePerks.clusterLevel;
-
-      // (A) 左翼護盾核心
-      if (currentBoss.leftCore.alive) {
-        const lx = bx + currentBoss.leftCore.relX;
-        const ly = by + currentBoss.leftCore.relY;
-        if (Math.hypot(p.tx - lx, p.ty - ly) < currentBoss.leftCore.radius + 20) {
-          currentBoss.leftCore.hp -= damage;
-          sfx.playHitSound();
-          spawnExplosion(p.tx, p.ty, '#00f0ff');
-          if (currentBoss.leftCore.hp <= 0) {
-            currentBoss.leftCore.alive = false;
-            sfx.playExplosion();
-            spawnExplosion(lx, ly, '#ff9900');
-            spawnFloatingText('L-CORE DESTROYED!', lx, ly, '#ffdd00');
-          }
-        }
-      }
-
-      // (B) 右翼護盾核心
-      if (currentBoss.rightCore.alive) {
-        const rx = bx + currentBoss.rightCore.relX;
-        const ry = by + currentBoss.rightCore.relY;
-        if (Math.hypot(p.tx - rx, p.ty - ry) < currentBoss.rightCore.radius + 20) {
-          currentBoss.rightCore.hp -= damage;
-          sfx.playHitSound();
-          spawnExplosion(p.tx, p.ty, '#00f0ff');
-          if (currentBoss.rightCore.hp <= 0) {
-            currentBoss.rightCore.alive = false;
-            sfx.playExplosion();
-            spawnExplosion(rx, ry, '#ff9900');
-            spawnFloatingText('R-CORE DESTROYED!', rx, ry, '#ffdd00');
-          }
-        }
-      }
-
-      // (C) 中央主反應爐
-      const mx = bx + currentBoss.mainReactor.relX;
-      const my = by + currentBoss.mainReactor.relY;
-      if (Math.hypot(p.tx - mx, p.ty - my) < currentBoss.mainReactor.radius + 24) {
-        const shieldActive = currentBoss.leftCore.alive || currentBoss.rightCore.alive;
-        if (shieldActive) {
-          // 護盾免疫
-          spawnFloatingText('🛡️ IMMUNE! (先破壞兩翼核心)', mx, my, '#00f0ff');
-          sfx.playHitSound();
-        } else {
-          // 弱點致命破壞
-          currentBoss.mainReactor.hp -= damage * 2; // 弱點 2 倍暴擊
-          sfx.playHitSound();
-          spawnExplosion(p.tx, p.ty, '#ff3300');
-          spawnFloatingText(`CRITICAL! -${damage * 2}`, mx, my, '#ff0055');
-
-          if (currentBoss.mainReactor.hp <= 0) {
-            destroyBoss();
-          }
-        }
-      }
+      currentBoss.onHit(p.tx, p.ty, damage);
     }
   }
 }
