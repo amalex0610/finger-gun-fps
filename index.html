@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR 5.0 | 三大傳奇 BOSS 戰</title>
+  <title>Cyber Finger-Gun AR 5.1 | 極限效能防卡死 · 三大 BOSS 戰</title>
   <style>
     * {
       box-sizing: border-box;
@@ -415,7 +415,7 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 5.0</div>
+    <div class="modal-title">CYBER FINGER GUN 5.1</div>
     <div class="modal-desc">
       極簡實景 FPS × 三大傳奇 BOSS 輪番登場 × 肉鴿晶片！<br>
       手感純粹進化，大拇指靈活扣扳機，重疊絕不走火！
@@ -1245,8 +1245,14 @@ class EnemyBullet {
     this.x += this.vx * timeScale;
     this.y += this.vy * timeScale;
 
+    // 飛出螢幕四方邊界自動銷毀 (防止記憶體無限暴增)
+    if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
+      this.isDead = true;
+      return;
+    }
+
     // 撞擊玩家
-    if (this.y > canvas.height * 0.7) {
+    if (this.y > canvas.height * 0.72) {
       applyDamage(15);
       spawnExplosion(this.x, this.y, '#ff0055');
       this.isDead = true;
@@ -2223,6 +2229,13 @@ function gameLoop() {
     }
   }
 
+  // 記憶體與實體上限防護 (長時間遊玩恆定流暢，杜絕記憶體洩漏與卡死)
+  if (particles.length > 65) particles.splice(0, particles.length - 65);
+  if (enemyBullets.length > 18) enemyBullets.splice(0, enemyBullets.length - 18);
+  if (laserBeams.length > 10) laserBeams.splice(0, laserBeams.length - 10);
+  if (lightningBolts.length > 5) lightningBolts.splice(0, lightningBolts.length - 5);
+  if (floatingTexts.length > 8) floatingTexts.splice(0, floatingTexts.length - 8);
+
   // 螢幕震動
   ctx.save();
   if (screenShake > 0) {
@@ -2466,6 +2479,8 @@ hands.setOptions({
 });
 hands.onResults(onResults);
 
+let isProcessingAiFrame = false;
+
 function startCamera(facingMode = 'environment') {
   currentFacingMode = facingMode;
   if (cameraInstance) {
@@ -2474,7 +2489,16 @@ function startCamera(facingMode = 'environment') {
 
   cameraInstance = new Camera(videoElement, {
     onFrame: async () => {
-      await hands.send({ image: videoElement });
+      // 關鍵防卡死機制：若上一幀 AI 模型仍在運算，主動跳過當前幀，防止顯存堆疊與瀏覽器 GPU 卡死崩潰
+      if (isProcessingAiFrame) return;
+      isProcessingAiFrame = true;
+      try {
+        await hands.send({ image: videoElement });
+      } catch (err) {
+        console.warn('AI frame drop:', err);
+      } finally {
+        isProcessingAiFrame = false;
+      }
     },
     width: { ideal: 640 },
     height: { ideal: 480 },
