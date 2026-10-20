@@ -401,8 +401,11 @@ let lastHitTime = 0;
 let isGunDetected = false;
 let isThumbReady = false; // 拇指是否處於瞄準立起狀態
 let lastFireTime = 0;
-let gunCrosshair = { x: -100, y: -100, active: false };
+let gunCrosshair = { x: -100, y: -100, targetX: -100, targetY: -100, active: false };
 let muzzlePos = { x: -100, y: -100 };
+let currentHandLandmarks = null; // 用於在畫面上繪製科幻微光手部骨骼
+let prevThumbDist = 0.5;
+let triggerCooldown = 0;
 
 // 粒子、子彈與浮動數字系統
 let particles = [];
@@ -615,13 +618,14 @@ window.addEventListener('pointerdown', (e) => {
   triggerShot(e.clientX, e.clientY);
 });
 
-// --- MediaPipe 手勢偵測回呼 ---
+// --- MediaPipe 手勢偵測回呼 (極致靈敏度優化版) ---
 function onResults(results) {
   if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
     isGunDetected = false;
     gunCrosshair.active = false;
+    currentHandLandmarks = null;
     statusDot.className = 'status-dot';
-    statusText.innerText = '尋找手部中... 請伸出手比手槍 👉';
+    statusText.innerText = '尋找手部中... 請將手伸入鏡頭 👉';
     return;
   }
 
@@ -633,23 +637,28 @@ function onResults(results) {
     y: p.y * canvas.height,
     z: p.z
   }));
+  currentHandLandmarks = pts;
 
-  // 計算距離小幫手
+  // 計算 2D 距離
   const dist = (i, j) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
 
-  // 手掌參考尺寸 (手腕 0 到 中指 MCP 9)
-  const palmSize = dist(0, 9);
-  if (palmSize < 20) return;
+  // 手掌參考尺寸 (手腕 0 到 食指根部 5)
+  const palmSize = dist(0, 5) || 100;
+  if (palmSize < 25) return;
 
-  // 1. 食指伸展判定 (Index finger extended)
-  const isIndexExtended = dist(8, 0) > dist(6, 0) * 1.25;
+  // 1. 食指伸展判定 (Index extended)
+  // 食指指尖(8)到食指根部(5)的長度，比關節(6)到(5)長很多，代表食指伸直
+  const indexLength = dist(8, 5);
+  const indexBase = dist(6, 5);
+  const isIndexStraight = indexLength > indexBase * 1.55;
 
-  // 2. 中指、無名指、小指收攏握拳判定 (Fingers curled)
-  const isMiddleCurled = dist(12, 0) < dist(9, 0) * 1.35;
-  const isRingCurled = dist(16, 0) < dist(13, 0) * 1.35;
-  const isPinkyCurled = dist(20, 0) < dist(17, 0) * 1.35;
+  // 2. 食指明顯長於中指 (比出手槍的特徵，不強制要求中指無名指完全縮死)
+  const isIndexLongerThanMiddle = dist(8, 0) > dist(12, 0) * 1.1;
 
-  const isGunPose = isIndexExtended && isMiddleCurled && isRingCurled;
+  // 寬容度遲滯：如果剛才已經是指槍狀態，門檻適度放寬以防閃爍
+  const isGunPose = isGunDetected 
+    ? (indexLength > indexBase * 1.35 && dist(8, 0) > dist(12, 0) * 1.05)
+    : (isIndexStraight && isIndexLongerThanMiddle);
 
   if (isGunPose) {
     isGunDetected = true;
@@ -663,30 +672,36 @@ function onResults(results) {
     const dirY = pts[8].y - pts[6].y;
     const dirLen = Math.hypot(dirX, dirY) || 1;
     
-    // 準星定在指尖前方 120 像素處
-    gunCrosshair.x = pts[8].x + (dirX / dirLen) * 140;
-    gunCrosshair.y = pts[8].y + (dirY / dirLen) * 140;
+    // 目標準星定在指尖前方 120 像素處
+    gunCrosshair.targetX = pts[8].x + (dirX / dirLen) * 130;
+    gunCrosshair.targetY = pts[8].y + (dirY / dirLen) * 130;
 
     // 3. 扣扳機射擊判定 (大拇指尖 4 相對食指根部 5 的歸一化距離)
     const thumbDist = dist(4, 5) / palmSize;
+    const thumbSpeed = prevThumbDist - thumbDist; // 拇指急速向下扣動的速度
+    prevThumbDist = thumbDist;
+
+    const now = Date.now();
 
     // 狀態機：大拇指立起時準備 (Ready)，下扣時開火 (Fire)
-    if (thumbDist > 0.62) {
+    // 門檻大幅放寬：只要大於 0.44 即算立起；只要小於 0.38 或高速下壓即扣動
+    if (thumbDist > 0.45) {
       isThumbReady = true;
       statusDot.className = 'status-dot ready';
       statusText.innerText = '🎯 鎖定瞄準！向下扣動大拇指開火！';
-    } else if (isThumbReady && thumbDist < 0.46) {
-      // 觸發開火！
-      isThumbReady = false;
-      statusDot.className = 'status-dot';
-      statusText.innerText = '💥 FIRE!! 開火！';
-      triggerShot(gunCrosshair.x, gunCrosshair.y);
+    } else if (isThumbReady && (thumbDist < 0.38 || thumbSpeed > 0.08)) {
+      if (now - lastFireTime > 200) {
+        isThumbReady = false;
+        statusDot.className = 'status-dot';
+        statusText.innerText = '💥 FIRE!! 開火！';
+        triggerShot(gunCrosshair.x, gunCrosshair.y);
+      }
     }
   } else {
     isGunDetected = false;
     gunCrosshair.active = false;
     statusDot.className = 'status-dot';
-    statusText.innerText = '請伸展食指、收合其他手指比出 👉';
+    statusText.innerText = '請伸展食指、收縮其他手指比出 👉';
   }
 }
 
@@ -807,35 +822,90 @@ function gameLoop() {
     if (ft.alpha <= 0) floatingTexts.splice(i, 1);
   }
 
-  // 6. 繪製未來科幻準星 (Crosshair)
+  // 5.5 繪製科幻霓虹手部微光骨架 (讓玩家清楚確認相機是否咬住手指)
+  if (currentHandLandmarks) {
+    const pts = currentHandLandmarks;
+    ctx.save();
+    // 繪製骨架連接線 (手腕到指關節)
+    ctx.strokeStyle = isGunDetected ? 'rgba(0, 240, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 2;
+    const connections = [
+      [0, 1], [1, 2], [2, 3], [3, 4], // 拇指
+      [0, 5], [5, 6], [6, 7], [7, 8], // 食指
+      [5, 9], [9, 10], [10, 11], [11, 12], // 中指
+      [9, 13], [13, 14], [14, 15], [15, 16], // 無名指
+      [13, 17], [17, 18], [18, 19], [19, 20], [0, 17] // 小指
+    ];
+    for (const [a, b] of connections) {
+      ctx.beginPath();
+      ctx.moveTo(pts[a].x, pts[a].y);
+      ctx.lineTo(pts[b].x, pts[b].y);
+      ctx.stroke();
+    }
+
+    // 拇指與食指指尖高亮光點
+    ctx.fillStyle = isThumbReady ? '#00ff88' : '#00f0ff';
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 10;
+    // 食指尖 (槍口)
+    ctx.beginPath();
+    ctx.arc(pts[8].x, pts[8].y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    // 拇指尖 (擊錘/扳機)
+    ctx.fillStyle = isThumbReady ? '#00ff88' : '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(pts[4].x, pts[4].y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 6. 繪製未來科幻準星 (Crosshair - 平滑插值版)
   if (gunCrosshair.active) {
+    // 絲滑防抖平滑追蹤
+    if (gunCrosshair.x === -100) {
+      gunCrosshair.x = gunCrosshair.targetX;
+      gunCrosshair.y = gunCrosshair.targetY;
+    } else {
+      gunCrosshair.x += (gunCrosshair.targetX - gunCrosshair.x) * 0.45;
+      gunCrosshair.y += (gunCrosshair.targetY - gunCrosshair.y) * 0.45;
+    }
+
     const cx = gunCrosshair.x;
     const cy = gunCrosshair.y;
     ctx.save();
     ctx.translate(cx, cy);
 
-    // 準星外圓環
-    ctx.strokeStyle = isThumbReady ? '#00ff88' : '#00f0ff';
+    const themeColor = isThumbReady ? '#00ff88' : '#00f0ff';
+    ctx.strokeStyle = themeColor;
     ctx.lineWidth = 2;
-    ctx.shadowColor = ctx.strokeStyle;
-    ctx.shadowBlur = 10;
+    ctx.shadowColor = themeColor;
+    ctx.shadowBlur = 12;
+
+    // 準星外圓環 (旋轉光環效果)
     ctx.beginPath();
-    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.arc(0, 0, 24, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 準星十字線
+    // 準星十字瞄準線
     ctx.beginPath();
-    ctx.moveTo(-30, 0); ctx.lineTo(-10, 0);
-    ctx.moveTo(10, 0); ctx.lineTo(30, 0);
-    ctx.moveTo(0, -30); ctx.lineTo(0, -10);
-    ctx.moveTo(0, 10); ctx.lineTo(0, 30);
+    ctx.moveTo(-32, 0); ctx.lineTo(-12, 0);
+    ctx.moveTo(12, 0); ctx.lineTo(32, 0);
+    ctx.moveTo(0, -32); ctx.lineTo(0, -12);
+    ctx.moveTo(0, 12); ctx.lineTo(0, 32);
     ctx.stroke();
 
-    // 中心點
-    ctx.fillStyle = ctx.strokeStyle;
+    // 中心微點
+    ctx.fillStyle = themeColor;
     ctx.beginPath();
     ctx.arc(0, 0, 3, 0, Math.PI * 2);
     ctx.fill();
+
+    // 狀態文字標籤
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = themeColor;
+    ctx.font = '900 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(isThumbReady ? '⚡ READY (扣下開火)' : 'AIMING...', 0, 38);
 
     ctx.restore();
   }
@@ -845,15 +915,15 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// --- 初始化 MediaPipe Hands 與相機 ---
+// --- 初始化 MediaPipe Hands 與相機 (極速輕量 60FPS 模式) ---
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 hands.setOptions({
   maxNumHands: 1,
-  modelComplexity: 1,
-  minDetectionConfidence: 0.65,
-  minTrackingConfidence: 0.65
+  modelComplexity: 0, // 改為 Lite 輕量模型，專為手機 60FPS 極速辨識設計！
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
 });
 hands.onResults(onResults);
 
@@ -867,8 +937,8 @@ function startCamera(facingMode = 'environment') {
     onFrame: async () => {
       await hands.send({ image: videoElement });
     },
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
+    width: { ideal: 640 }, // 改為 640x480，大幅減少手機神經網絡負載與延遲
+    height: { ideal: 480 },
     facingMode: facingMode
   });
   cameraInstance.start();
