@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR 6.0 | 四大神兵極限火力 · 三大傳奇 BOSS</title>
+  <title>Cyber Finger-Gun AR 6.1 | 傳奇 BOSS 雙命二階狂暴變身 · 弱點機制全面進化</title>
   <style>
     * {
       box-sizing: border-box;
@@ -415,18 +415,20 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 6.0</div>
+    <div class="modal-title">CYBER FINGER GUN 6.1</div>
     <div class="modal-desc">
-      極簡實景 FPS × 四大神兵極限火力 × 三大傳奇 BOSS！<br>
-      純拇指動態扳機 · 拒絕重疊走火 · 支援極速連射與高能聚能！
+      極簡實景 FPS × 四大神兵極限火力 × 三大傳奇 BOSS 雙命二階變身！<br>
+      純拇指動態扳機 · 弱點機制全面進化 · 雙血條狂暴二階超凡進化！
     </div>
     <div class="gesture-guide">
       🔫 <b>單指手槍</b>：食指瞄準，大拇指單次下扣開火！<br>
       🌪️ <b>加特林機槍</b>：扣下拇指<b>按住不放</b>，85ms 極速暴風掃射！<br>
-      ⚡ <b>高能軌道砲</b>：大拇指<b>立起瞄準 1 秒蓄滿</b>，下扣貫穿整條螢幕！<br>
+      ⚡ <b>高能軌道砲</b>：大拇指<b>立起瞄準 1 秒蓄滿</b>，下扣發射貫穿整條螢幕！<br>
       💥 <b>雙指霰彈槍</b>：食指＋中指併攏瞄準，扇形 5 發大範圍覆蓋！<br>
-      👑 <b>三大傳奇 BOSS 輪番降臨</b>：15 殺巡洋母艦 / 35 殺機械巨蛛 / 60 殺終焉星核！<br>
-      🎁 <b>射擊拾取晶片</b>：打爆空中懸浮晶片，升級電弧、高爆、子彈時間與護盾！
+      👑 <b>三大傳奇 BOSS 雙命二階狂暴形態</b>：<br>
+      &nbsp;&nbsp;1. 🛸 <b>巡洋母艦</b>：破兩翼方可攻核心 ➔ 雙重重砲「滅世殲滅者」！<br>
+      &nbsp;&nbsp;2. 🕷️ <b>機械巨蛛</b>：複眼絕對無敵！必先打斷4條蛛腿 ➔ 六刃鐮刀「天啟災厄巨蛛」！<br>
+      &nbsp;&nbsp;3. 👁️ <b>終焉星核</b>：護盾實體偏折！必抓旋轉間隙射擊 ➔ 引力黑洞「超新星滅絕黑核」！
     </div>
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始挑戰</button>
   </div>
@@ -715,6 +717,57 @@ class SoundSynthesizer {
     gain.connect(this.ctx.destination);
     osc.start(now);
     osc.stop(now + 0.06);
+  }
+
+  // 🛡️ 護盾/無敵彈刀金屬嗡鳴音效
+  playShieldBlock() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(850, now);
+    osc.frequency.exponentialRampToValueAtTime(1450, now + 0.08);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  }
+
+  // ⚡ BOSS 二階段狂暴變身史詩咆哮音效
+  playBossTransform() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // 重低音下沉衝擊波
+    const osc1 = this.ctx.createOscillator();
+    const gain1 = this.ctx.createGain();
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(260, now);
+    osc1.frequency.exponentialRampToValueAtTime(28, now + 0.7);
+    gain1.gain.setValueAtTime(0.7, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+    osc1.connect(gain1);
+    gain1.connect(this.ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.75);
+
+    // 三重科技狂暴警報音
+    for (let i = 0; i < 3; i++) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(620 + (i % 2) * 280, now + i * 0.18);
+      osc.frequency.exponentialRampToValueAtTime(160, now + i * 0.18 + 0.16);
+      gain.gain.setValueAtTime(0.35, now + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.16);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + i * 0.18);
+      osc.stop(now + i * 0.18 + 0.16);
+    }
+    this.playNoisePunch(0.4, 0.85);
   }
 
   // ⚠️ BOSS 登場空襲重低音警報
@@ -1231,24 +1284,27 @@ class KamikazeDrone {
 }
 
 // 👑 BOSS 階段與管理器 (多 BOSS 輪替)
-// bossPhase: 0: 準備打 BOSS 1, 1: 準備打 BOSS 2, 2: 準備打 BOSS 3
+// 👑 全螢幕 BOSS 警報橫幅呼叫器
+function showBossBanner(text, duration = 3200) {
+  const banner = document.getElementById('boss-warning-banner');
+  if (banner) {
+    banner.innerText = text;
+    banner.classList.add('active');
+    setTimeout(() => { banner.classList.remove('active'); }, duration);
+  }
+}
 
 // ⚠️ 觸發 BOSS 戰 (根據階段派發不同傳奇 BOSS)
 function triggerBossFight() {
   bossTriggered = true;
   sfx.playBossAlert();
-  const banner = document.getElementById('boss-warning-banner');
 
   let bossName = '';
   if (bossPhase === 0) bossName = 'CYBER DREADNOUGHT (巨型巡洋母艦)';
   else if (bossPhase === 1) bossName = 'VOID MECHA-ARACHNID (虛空機械巨蛛)';
   else bossName = 'OUROBOROS CELESTIAL CORE (終焉天罰星核)';
 
-  if (banner) {
-    banner.innerText = `⚠️ WARNING: ${bossName} ⚠️`;
-    banner.classList.add('active');
-    setTimeout(() => { banner.classList.remove('active'); }, 3200);
-  }
+  showBossBanner(`⚠️ WARNING: ${bossName} ⚠️`, 3200);
   screenShake = 26;
 
   setTimeout(() => {
@@ -1267,55 +1323,58 @@ function destroyBoss() {
   currentBoss = null;
 
   // 連續連鎖大核爆
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 9; i++) {
     setTimeout(() => {
       sfx.playExplosion();
-      screenShake = 25;
+      screenShake = 28;
       flashOverlay.style.opacity = '1';
       setTimeout(() => { flashOverlay.style.opacity = '0'; }, 80);
-      spawnExplosion(bx + (Math.random() - 0.5) * 240, by + (Math.random() - 0.5) * 70, '#ff9900');
-      spawnExplosion(bx + (Math.random() - 0.5) * 180, by + (Math.random() - 0.5) * 60, '#ff0055');
-    }, i * 180);
+      spawnExplosion(bx + (Math.random() - 0.5) * 260, by + (Math.random() - 0.5) * 80, '#ff9900');
+      spawnExplosion(bx + (Math.random() - 0.5) * 200, by + (Math.random() - 0.5) * 70, '#ff0055');
+    }, i * 160);
   }
 
   // 結算與晉級下一個 BOSS 階段
   setTimeout(() => {
-    let rewardPoints = 3000;
+    let rewardPoints = 4000;
     let label = '';
     if (phase === 0) {
-      rewardPoints = 3000;
-      label = '🏆 DREADNOUGHT DESTROYED! +3000';
-    } else if (phase === 1) {
       rewardPoints = 4000;
-      label = '🏆 MECHA-ARACHNID EXTERMINATED! +4000';
-    } else {
+      label = '🏆 DREADNOUGHT DESTROYED! +4000';
+    } else if (phase === 1) {
       rewardPoints = 5000;
-      label = '👑 OUROBOROS CORE OBLITERATED! +5000';
+      label = '🏆 MECHA-ARACHNID EXTERMINATED! +5000';
+    } else {
+      rewardPoints = 7000;
+      label = '👑 OUROBOROS CORE OBLITERATED! +7000';
     }
 
     score += rewardPoints;
     scoreElem.innerText = score;
     spawnFloatingText(label, canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
 
-    // 空投多個金色晶片
+    // 空投 3 個金色晶片
+    spawnPerkDrop();
     spawnPerkDrop();
     spawnPerkDrop();
 
     // 晉級下一個 BOSS 階段
     bossPhase = (bossPhase + 1) % 3;
     bossTriggered = false; // 解鎖下一場 BOSS 戰
-  }, 1500);
+  }, 1600);
 }
+
 class EnemyBullet {
-  constructor(x, y, targetX, targetY) {
+  constructor(x, y, targetX, targetY, speed = 3.5, color = '#ff0055', radius = 14) {
     this.x = x;
     this.y = y;
-    this.radius = 14;
+    this.radius = radius;
+    this.color = color;
     const dx = targetX - x;
     const dy = targetY - y;
     const d = Math.hypot(dx, dy) || 1;
-    this.vx = (dx / d) * 3.5;
-    this.vy = (dy / d) * 3.5;
+    this.vx = (dx / d) * speed;
+    this.vy = (dy / d) * speed;
     this.isDead = false;
   }
 
@@ -1323,7 +1382,7 @@ class EnemyBullet {
     this.x += this.vx * timeScale;
     this.y += this.vy * timeScale;
 
-    // 飛出螢幕四方邊界自動銷毀 (防止記憶體無限暴增)
+    // 飛出螢幕四方邊界自動銷毀
     if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
       this.isDead = true;
       return;
@@ -1332,7 +1391,7 @@ class EnemyBullet {
     // 撞擊玩家
     if (this.y > canvas.height * 0.72) {
       applyDamage(15);
-      spawnExplosion(this.x, this.y, '#ff0055');
+      spawnExplosion(this.x, this.y, this.color);
       this.isDead = true;
     }
   }
@@ -1340,21 +1399,22 @@ class EnemyBullet {
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.fillStyle = '#ff0055';
-    ctx.shadowColor = '#ff0033';
+    ctx.fillStyle = this.color;
+    ctx.shadowColor = this.color;
     ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffea00';
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
+    ctx.arc(0, 0, this.radius * 0.45, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 }
 
-// 👑 巨型賽博重巡洋母艦 BOSS (Cyber Dreadnought)
+// 👑 BOSS 1：巨型賽博重巡洋母艦 (Cyber Dreadnought)
+// 一階：破兩翼方可攻核心 ➔ 雙命變身二階：滅世殲滅者狂暴態
 class CyberDreadnought {
   constructor() {
     this.x = canvas.width * 0.5;
@@ -1366,33 +1426,77 @@ class CyberDreadnought {
     this.shootTimer = 0;
     this.isDead = false;
 
-    // 3 大戰鬥部位
+    // 雙階段狀態
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+
+    // 一階段核心
     this.leftCore = { relX: -this.width * 0.36, relY: -5, hp: 8, maxHp: 8, radius: 24, alive: true };
     this.rightCore = { relX: this.width * 0.36, relY: -5, hp: 8, maxHp: 8, radius: 24, alive: true };
     this.mainReactor = { relX: 0, relY: 15, hp: 26, maxHp: 26, radius: 32, alive: true };
+
+    // 二階段狂暴血量
+    this.phase2Hp = 45;
+    this.phase2MaxHp = 45;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    sfx.playBossTransform();
+    screenShake = 30;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 150);
+    showBossBanner('⚠️ DREADNOUGHT OVERDRIVE BERSERK!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: ANNIHILATOR BERSERK!!', this.x, this.y, '#ff0055');
+
+    // 連續爆甲火花
+    for (let i = 0; i < 12; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * this.width, this.y + (Math.random() - 0.5) * 50, '#ffaa00');
+        spawnExplosion(this.x + (Math.random() - 0.5) * this.width * 0.7, this.y + 20, '#ff0055');
+      }, i * 80);
+    }
   }
 
   update(dt, timeScale) {
-    // 降落入場
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) {
+        this.isTransforming = false;
+      }
+      return;
+    }
+
     if (this.y < this.targetY) {
       this.y += (this.targetY - this.y) * (0.03 * timeScale) + 0.5;
     } else {
-      // 左右緩慢巡弋
-      this.x += this.moveDir * 0.8 * timeScale;
+      const speed = (this.currentPhase === 1 ? 0.8 : 1.5) * timeScale;
+      this.x += this.moveDir * speed;
       if (this.x > canvas.width * 0.65) this.moveDir = -1;
       else if (this.x < canvas.width * 0.35) this.moveDir = 1;
 
-      // 發射能量光球
       this.shootTimer += dt * timeScale;
-      if (this.shootTimer > 2.2) {
+      const interval = this.currentPhase === 1 ? 2.2 : 1.25;
+
+      if (this.shootTimer > interval) {
         this.shootTimer = 0;
         sfx.playBossLaser();
-        // 從兩翼發射光彈
-        if (this.leftCore.alive) {
-          enemyBullets.push(new EnemyBullet(this.x + this.leftCore.relX, this.y + 20, canvas.width * 0.4, canvas.height * 0.7));
-        }
-        if (this.rightCore.alive) {
-          enemyBullets.push(new EnemyBullet(this.x + this.rightCore.relX, this.y + 20, canvas.width * 0.6, canvas.height * 0.7));
+
+        if (this.currentPhase === 1) {
+          if (this.leftCore.alive) {
+            enemyBullets.push(new EnemyBullet(this.x + this.leftCore.relX, this.y + 20, canvas.width * 0.4, canvas.height * 0.7));
+          }
+          if (this.rightCore.alive) {
+            enemyBullets.push(new EnemyBullet(this.x + this.rightCore.relX, this.y + 20, canvas.width * 0.6, canvas.height * 0.7));
+          }
+        } else {
+          // 二階段：雙聯殲滅重砲 (三向高爆光球)
+          enemyBullets.push(new EnemyBullet(this.x - 70, this.y + 35, canvas.width * 0.25, canvas.height * 0.7, 4.2, '#ff3300', 16));
+          enemyBullets.push(new EnemyBullet(this.x, this.y + 45, canvas.width * 0.5, canvas.height * 0.7, 5.0, '#ffaa00', 18));
+          enemyBullets.push(new EnemyBullet(this.x + 70, this.y + 35, canvas.width * 0.75, canvas.height * 0.7, 4.2, '#ff3300', 16));
         }
       }
     }
@@ -1404,13 +1508,14 @@ class CyberDreadnought {
 
     const w = this.width;
     const h = this.height;
+    const isP2 = this.currentPhase === 2;
 
-    // 1. 母艦主艦體 (科幻重裝甲幾何體)
-    ctx.fillStyle = '#0a1020';
-    ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = '#00f0ff';
-    ctx.shadowBlur = 15;
+    // 1. 母艦主艦體 (一階科幻青藍 / 二階曜黑血紅)
+    ctx.fillStyle = isP2 ? '#100508' : '#0a1020';
+    ctx.strokeStyle = isP2 ? '#ff0033' : '#00f0ff';
+    ctx.lineWidth = isP2 ? 3.5 : 3;
+    ctx.shadowColor = isP2 ? '#ff0055' : '#00f0ff';
+    ctx.shadowBlur = isP2 ? 22 : 15;
 
     ctx.beginPath();
     ctx.moveTo(-w * 0.5, -h * 0.2);
@@ -1418,15 +1523,26 @@ class CyberDreadnought {
     ctx.lineTo(w * 0.3, -h * 0.5);
     ctx.lineTo(w * 0.5, -h * 0.2);
     ctx.lineTo(w * 0.45, h * 0.4);
-    ctx.lineTo(0, h * 0.65);
+    ctx.lineTo(0, h * (isP2 ? 0.85 : 0.65));
     ctx.lineTo(-w * 0.45, h * 0.4);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
+    // 二階段雙聯重砲管
+    if (isP2) {
+      ctx.fillStyle = '#ff3300';
+      ctx.strokeStyle = '#ffea00';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-76, h * 0.2, 14, 30);
+      ctx.strokeRect(-76, h * 0.2, 14, 30);
+      ctx.fillRect(62, h * 0.2, 14, 30);
+      ctx.strokeRect(62, h * 0.2, 14, 30);
+    }
+
     // 艦身發光紋路
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+    ctx.strokeStyle = isP2 ? 'rgba(255, 50, 0, 0.5)' : 'rgba(0, 240, 255, 0.4)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(-w * 0.35, 0); ctx.lineTo(w * 0.35, 0);
@@ -1434,39 +1550,67 @@ class CyberDreadnought {
     ctx.moveTo(w * 0.2, -h * 0.3); ctx.lineTo(w * 0.1, h * 0.3);
     ctx.stroke();
 
-    // 2. 繪製左翼護盾核心
-    this.drawCore(ctx, this.leftCore, '#00f0ff', 'L-CORE');
+    if (this.currentPhase === 1) {
+      this.drawCore(ctx, this.leftCore, '#00f0ff', 'L-CORE');
+      this.drawCore(ctx, this.rightCore, '#00f0ff', 'R-CORE');
 
-    // 3. 繪製右翼護盾核心
-    this.drawCore(ctx, this.rightCore, '#00f0ff', 'R-CORE');
+      const shieldActive = this.leftCore.alive || this.rightCore.alive;
+      const reactorColor = shieldActive ? '#00f0ff' : '#ff3300';
+      this.drawCore(ctx, this.mainReactor, reactorColor, shieldActive ? '🛡️ SHIELDED' : '⚠️ WEAKPOINT');
 
-    // 4. 繪製中央反應爐核心
-    const shieldActive = this.leftCore.alive || this.rightCore.alive;
-    const reactorColor = shieldActive ? '#00f0ff' : '#ff3300';
-    this.drawCore(ctx, this.mainReactor, reactorColor, shieldActive ? '🛡️ SHIELDED' : '⚠️ WEAKPOINT');
+      if (shieldActive) {
+        ctx.save();
+        ctx.translate(this.mainReactor.relX, this.mainReactor.relY);
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 6]);
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.mainReactor.radius + 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
 
-    // 若護盾還在，繪製覆蓋反應爐的全息防護力場
-    if (shieldActive) {
+      // BOSS 頂部血條 (Phase 1/2)
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-w * 0.4, -h * 0.5 - 20, w * 0.8, 9);
+      const totalHp = (this.leftCore.alive ? this.leftCore.hp : 0) + (this.rightCore.alive ? this.rightCore.hp : 0) + this.mainReactor.hp;
+      const maxTotal = this.leftCore.maxHp + this.rightCore.maxHp + this.mainReactor.maxHp;
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(-w * 0.4, -h * 0.5 - 20, (w * 0.8) * Math.max(0, totalHp / maxTotal), 9);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '900 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('CYBER DREADNOUGHT · PHASE 1/2', 0, -h * 0.5 - 24);
+    } else {
+      // 繪製二階段滅世高能紅蓮核心
       ctx.save();
-      ctx.translate(this.mainReactor.relX, this.mainReactor.relY);
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([8, 6]);
-      ctx.shadowColor = '#00f0ff';
-      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ff0033';
+      ctx.shadowColor = '#ff0055';
+      ctx.shadowBlur = 25;
       ctx.beginPath();
-      ctx.arc(0, 0, this.mainReactor.radius + 12, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
-    }
+      ctx.arc(0, 15, 36, 0, Math.PI * 2);
+      ctx.fill();
 
-    // BOSS 頂部血條
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(-w * 0.4, -h * 0.5 - 16, w * 0.8, 8);
-    const totalHp = (this.leftCore.alive ? this.leftCore.hp : 0) + (this.rightCore.alive ? this.rightCore.hp : 0) + this.mainReactor.hp;
-    const maxTotal = this.leftCore.maxHp + this.rightCore.maxHp + this.mainReactor.maxHp;
-    ctx.fillStyle = '#ff0055';
-    ctx.fillRect(-w * 0.4, -h * 0.5 - 16, (w * 0.8) * Math.max(0, totalHp / maxTotal), 8);
+      ctx.fillStyle = '#ffea00';
+      ctx.beginPath();
+      ctx.arc(0, 15, 18 + Math.sin(Date.now() * 0.015) * 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // BOSS 頂部狂暴血條 (Phase 2/2)
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-w * 0.4, -h * 0.5 - 20, w * 0.8, 9);
+      ctx.fillStyle = '#ff0033';
+      ctx.fillRect(-w * 0.4, -h * 0.5 - 20, (w * 0.8) * Math.max(0, this.phase2Hp / this.phase2MaxHp), 9);
+
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = '900 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠️ ANNIHILATOR BERSERK · PHASE 2/2 ⚠️', 0, -h * 0.5 - 24);
+    }
 
     ctx.restore();
   }
@@ -1475,7 +1619,6 @@ class CyberDreadnought {
     ctx.save();
     ctx.translate(core.relX, core.relY);
     if (!core.alive) {
-      // 已被擊破：冒黑煙殘骸
       ctx.fillStyle = '#222';
       ctx.beginPath();
       ctx.arc(0, 0, core.radius * 0.6, 0, Math.PI * 2);
@@ -1502,72 +1645,90 @@ class CyberDreadnought {
     ctx.font = '900 9px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(label, 0, core.radius + 11);
-
     ctx.restore();
   }
 
-  // 命中判定
   onHit(tx, ty, damage) {
+    if (this.isTransforming) {
+      sfx.playShieldBlock();
+      spawnFloatingText('⚡ TRANSFORMING...', this.x, this.y, '#ffaa00');
+      return true;
+    }
+
     const bx = this.x;
     const by = this.y;
 
-    if (this.leftCore.alive) {
-      const lx = bx + this.leftCore.relX;
-      const ly = by + this.leftCore.relY;
-      if (Math.hypot(tx - lx, ty - ly) < this.leftCore.radius + 20) {
-        this.leftCore.hp -= damage;
-        sfx.playHitSound();
-        spawnExplosion(tx, ty, '#00f0ff');
-        if (this.leftCore.hp <= 0) {
-          this.leftCore.alive = false;
-          sfx.playExplosion();
-          spawnExplosion(lx, ly, '#ff9900');
-          spawnFloatingText('L-CORE DESTROYED!', lx, ly, '#ffdd00');
+    if (this.currentPhase === 1) {
+      if (this.leftCore.alive) {
+        const lx = bx + this.leftCore.relX;
+        const ly = by + this.leftCore.relY;
+        if (Math.hypot(tx - lx, ty - ly) < this.leftCore.radius + 20) {
+          this.leftCore.hp -= damage;
+          sfx.playHitSound();
+          spawnExplosion(tx, ty, '#00f0ff');
+          if (this.leftCore.hp <= 0) {
+            this.leftCore.alive = false;
+            sfx.playExplosion();
+            spawnExplosion(lx, ly, '#ff9900');
+            spawnFloatingText('L-CORE DESTROYED!', lx, ly, '#ffdd00');
+          }
+          return true;
+        }
+      }
+
+      if (this.rightCore.alive) {
+        const rx = bx + this.rightCore.relX;
+        const ry = by + this.rightCore.relY;
+        if (Math.hypot(tx - rx, ty - ry) < this.rightCore.radius + 20) {
+          this.rightCore.hp -= damage;
+          sfx.playHitSound();
+          spawnExplosion(tx, ty, '#00f0ff');
+          if (this.rightCore.hp <= 0) {
+            this.rightCore.alive = false;
+            sfx.playExplosion();
+            spawnExplosion(rx, ry, '#ff9900');
+            spawnFloatingText('R-CORE DESTROYED!', rx, ry, '#ffdd00');
+          }
+          return true;
+        }
+      }
+
+      const mx = bx + this.mainReactor.relX;
+      const my = by + this.mainReactor.relY;
+      if (Math.hypot(tx - mx, ty - my) < this.mainReactor.radius + 24) {
+        const shieldActive = this.leftCore.alive || this.rightCore.alive;
+        if (shieldActive) {
+          sfx.playShieldBlock();
+          spawnFloatingText('🛡️ IMMUNE! (先破壞兩翼核心)', mx, my, '#00f0ff');
+        } else {
+          this.mainReactor.hp -= damage * 2;
+          sfx.playHitSound();
+          spawnExplosion(tx, ty, '#ff3300');
+          spawnFloatingText(`CRITICAL! -${damage * 2}`, mx, my, '#ff0055');
+          if (this.mainReactor.hp <= 0) {
+            this.triggerPhase2();
+          }
         }
         return true;
       }
-    }
-
-    if (this.rightCore.alive) {
-      const rx = bx + this.rightCore.relX;
-      const ry = by + this.rightCore.relY;
-      if (Math.hypot(tx - rx, ty - ry) < this.rightCore.radius + 20) {
-        this.rightCore.hp -= damage;
+    } else {
+      if (Math.hypot(tx - bx, ty - (by + 15)) < 55) {
+        this.phase2Hp -= damage;
         sfx.playHitSound();
-        spawnExplosion(tx, ty, '#00f0ff');
-        if (this.rightCore.hp <= 0) {
-          this.rightCore.alive = false;
-          sfx.playExplosion();
-          spawnExplosion(rx, ry, '#ff9900');
-          spawnFloatingText('R-CORE DESTROYED!', rx, ry, '#ffdd00');
-        }
-        return true;
-      }
-    }
-
-    const mx = bx + this.mainReactor.relX;
-    const my = by + this.mainReactor.relY;
-    if (Math.hypot(tx - mx, ty - my) < this.mainReactor.radius + 24) {
-      const shieldActive = this.leftCore.alive || this.rightCore.alive;
-      if (shieldActive) {
-        spawnFloatingText('🛡️ IMMUNE! (先破壞兩翼核心)', mx, my, '#00f0ff');
-        sfx.playHitSound();
-      } else {
-        this.mainReactor.hp -= damage * 2;
-        sfx.playHitSound();
-        spawnExplosion(tx, ty, '#ff3300');
-        spawnFloatingText(`CRITICAL! -${damage * 2}`, mx, my, '#ff0055');
-        if (this.mainReactor.hp <= 0) {
+        spawnExplosion(tx, ty, '#ff0033');
+        spawnFloatingText(`-${damage}`, bx, by, '#ff3300');
+        if (this.phase2Hp <= 0) {
           destroyBoss();
         }
+        return true;
       }
-      return true;
     }
     return false;
   }
 }
 
 // 🕷️ BOSS 2：虛空機械巨蛛 (Void Mecha-Arachnid)
+// 一階：未斷4腿複眼絕對無敵 ➔ 雙命變身二階：天啟災厄巨蛛狂暴態
 class MechaArachnid {
   constructor() {
     this.x = canvas.width * 0.5;
@@ -1575,37 +1736,84 @@ class MechaArachnid {
     this.targetY = 120;
     this.swingTime = 0;
     this.shootTimer = 0;
-    this.hp = 30;
-    this.maxHp = 30;
     this.radius = 32;
 
-    // 4 隻機械蛛腿 (可被各別打斷)
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+
+    // 一階段：4 隻機械蛛腿
     this.legs = [
       { relX: -80, relY: -20, hp: 6, maxHp: 6, alive: true },
       { relX: -45, relY: -35, hp: 6, maxHp: 6, alive: true },
       { relX: 45, relY: -35, hp: 6, maxHp: 6, alive: true },
       { relX: 80, relY: -20, hp: 6, maxHp: 6, alive: true }
     ];
+    this.phase1Hp = 26;
+    this.phase1MaxHp = 26;
+
+    // 二階段血量
+    this.phase2Hp = 46;
+    this.phase2MaxHp = 46;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    this.targetY = 145;
+    sfx.playBossTransform();
+    screenShake = 30;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 150);
+    showBossBanner('⚠️ VOID APOCALYPSE ARACHNID!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: APOCALYPSE ARACHNID!!', this.x, this.y, '#ff00aa');
+
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 160, this.y + (Math.random() - 0.5) * 80, '#ff00aa');
+      }, i * 90);
+    }
   }
 
   update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) {
+        this.isTransforming = false;
+      }
+      return;
+    }
+
     if (this.y < this.targetY) {
       this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
     } else {
-      // 左右蜘蛛倒掛擺盪 (活著的腿越多，擺動越快)
-      const aliveLegCount = this.legs.filter(l => l.alive).length;
-      const speedMod = 0.5 + aliveLegCount * 0.25;
-      this.swingTime += dt * 2.2 * speedMod * timeScale;
-      this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.28);
+      if (this.currentPhase === 1) {
+        const aliveLegCount = this.legs.filter(l => l.alive).length;
+        const speedMod = 0.5 + aliveLegCount * 0.25;
+        this.swingTime += dt * 2.2 * speedMod * timeScale;
+        this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.28);
 
-      // 噴射綠色電漿毒彈
-      this.shootTimer += dt * timeScale;
-      if (this.shootTimer > 2.0) {
-        this.shootTimer = 0;
-        sfx.playBossLaser();
-        // 噴出 3 顆毒彈
-        for (let offset of [-60, 0, 60]) {
-          enemyBullets.push(new EnemyBullet(this.x, this.y + 15, this.x + offset, canvas.height * 0.7));
+        this.shootTimer += dt * timeScale;
+        if (this.shootTimer > 2.0) {
+          this.shootTimer = 0;
+          sfx.playBossLaser();
+          for (let offset of [-60, 0, 60]) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 15, this.x + offset, canvas.height * 0.7, 3.6, '#00ff88'));
+          }
+        }
+      } else {
+        // 二階段：天啟狂暴態高速擺動
+        this.swingTime += dt * 3.4 * timeScale;
+        this.x = canvas.width * 0.5 + Math.sin(this.swingTime) * (canvas.width * 0.35);
+
+        this.shootTimer += dt * timeScale;
+        if (this.shootTimer > 1.3) {
+          this.shootTimer = 0;
+          sfx.playBossLaser();
+          for (let offset of [-90, -45, 0, 45, 90]) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 20, this.x + offset, canvas.height * 0.75, 4.4, '#ff00aa', 15));
+          }
         }
       }
     }
@@ -1614,165 +1822,315 @@ class MechaArachnid {
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
+    const isP2 = this.currentPhase === 2;
 
-    // 1. 繪製倒掛蛛絲
-    ctx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, -this.y);
-    ctx.lineTo(0, -10);
-    ctx.stroke();
+    if (!isP2) {
+      // 1. 倒掛蛛絲
+      ctx.strokeStyle = 'rgba(0, 255, 136, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, -this.y);
+      ctx.lineTo(0, -10);
+      ctx.stroke();
 
-    // 2. 繪製 4 隻機械關節蛛腿
-    for (let leg of this.legs) {
-      ctx.save();
-      if (leg.alive) {
-        ctx.strokeStyle = '#00ff88';
-        ctx.lineWidth = 3.5;
-        ctx.shadowColor = '#00ff88';
-        ctx.shadowBlur = 10;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(leg.relX * 0.6, leg.relY - 20);
-        ctx.lineTo(leg.relX, leg.relY);
-        ctx.stroke();
+      // 2. 4 隻機械關節蛛腿
+      for (let leg of this.legs) {
+        ctx.save();
+        if (leg.alive) {
+          ctx.strokeStyle = '#00ff88';
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(leg.relX * 0.6, leg.relY - 20);
+          ctx.lineTo(leg.relX, leg.relY);
+          ctx.stroke();
 
-        // 關節點 (受擊部位)
-        ctx.fillStyle = '#ffdd00';
-        ctx.beginPath();
-        ctx.arc(leg.relX, leg.relY, 14, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        // 斷腿殘骸冒煙
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(leg.relX * 0.4, leg.relY * 0.4);
-        ctx.stroke();
+          // 關節受擊點
+          ctx.fillStyle = '#ffdd00';
+          ctx.beginPath();
+          ctx.arc(leg.relX, leg.relY, 14, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(leg.relX * 0.4, leg.relY * 0.4);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
-      ctx.restore();
+
+      // 3. 中央複眼核心
+      const aliveLegCount = this.legs.filter(l => l.alive).length;
+      const isImmune = aliveLegCount > 0;
+      const eyeColor = isImmune ? '#00ff88' : '#ff0033';
+
+      ctx.fillStyle = '#0a1a12';
+      ctx.strokeStyle = eyeColor;
+      ctx.lineWidth = 3;
+      ctx.shadowColor = eyeColor;
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(0, 5, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = eyeColor;
+      ctx.beginPath();
+      ctx.arc(0, 5, this.radius * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 複眼若處於無敵狀態，繪製高能防護六角力場
+      if (isImmune) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.75)';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([6, 4]);
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(0, 5, this.radius + 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 血條 (Phase 1/2)
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-70, -this.radius - 22, 140, 7);
+      ctx.fillStyle = '#00ff88';
+      ctx.fillRect(-70, -this.radius - 22, 140 * Math.max(0, this.phase1Hp / this.phase1MaxHp), 7);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '900 10px sans-serif';
+      ctx.textAlign = 'center';
+      const label = isImmune ? `🛡️ IMMUNE! 剩餘蛛腿: ${aliveLegCount}/4` : '⚠️ 蛛腿全斷！複眼破防暴擊！';
+      ctx.fillText(label, 0, this.radius + 24);
+      ctx.fillText('VOID MECHA-ARACHNID · PHASE 1/2', 0, -this.radius - 26);
+    } else {
+      // 繪製 6 隻狂暴幽能電漿鐮刀蛛腿
+      const legAngles = [-120, -90, -60, 60, 90, 120];
+      const legSpan = 95 + Math.sin(Date.now() * 0.01) * 8;
+      for (let ang of legAngles) {
+        const rad = (ang * Math.PI) / 180;
+        ctx.save();
+        ctx.strokeStyle = '#ff00aa';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#ff00aa';
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(Math.sin(rad) * (legSpan * 0.5), Math.cos(rad) * (legSpan * 0.5) - 20);
+        ctx.lineTo(Math.sin(rad) * legSpan, Math.cos(rad) * legSpan);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(Math.sin(rad) * legSpan, Math.cos(rad) * legSpan, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 天啟三重複眼核心
+      ctx.fillStyle = '#1a0515';
+      ctx.strokeStyle = '#ff0055';
+      ctx.lineWidth = 3.5;
+      ctx.shadowColor = '#ff0055';
+      ctx.shadowBlur = 24;
+      ctx.beginPath();
+      ctx.arc(0, 0, 38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 三顆赤紅邪眼
+      for (let offset of [-16, 0, 16]) {
+        ctx.fillStyle = '#ff0033';
+        ctx.beginPath();
+        ctx.arc(offset, (offset === 0 ? -6 : 6), 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffea00';
+        ctx.beginPath();
+        ctx.arc(offset, (offset === 0 ? -6 : 6), 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 血條 (Phase 2/2)
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-75, -55, 150, 8);
+      ctx.fillStyle = '#ff00aa';
+      ctx.fillRect(-75, -55, 150 * Math.max(0, this.phase2Hp / this.phase2MaxHp), 8);
+
+      ctx.fillStyle = '#ffdd00';
+      ctx.font = '900 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠️ APOCALYPSE ARACHNID · PHASE 2/2 ⚠️', 0, -62);
     }
-
-    // 3. 繪製中央複眼核心
-    const aliveLegCount = this.legs.filter(l => l.alive).length;
-    const eyeColor = aliveLegCount === 0 ? '#ff0033' : '#00ff88';
-
-    ctx.fillStyle = '#0a1a12';
-    ctx.strokeStyle = eyeColor;
-    ctx.lineWidth = 3;
-    ctx.shadowColor = eyeColor;
-    ctx.shadowBlur = 15;
-    ctx.beginPath();
-    ctx.arc(0, 5, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // 複眼瞳孔 (脈動)
-    ctx.fillStyle = eyeColor;
-    ctx.beginPath();
-    ctx.arc(0, 5, this.radius * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 血條
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(-70, -this.radius - 22, 140, 7);
-    ctx.fillStyle = '#00ff88';
-    ctx.fillRect(-70, -this.radius - 22, 140 * Math.max(0, this.hp / this.maxHp), 7);
-
-    ctx.fillStyle = '#fff';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(aliveLegCount === 0 ? 'PARALYZED (3X DAMAGE)' : `LEGS: ${aliveLegCount}/4`, 0, this.radius + 20);
 
     ctx.restore();
   }
 
   onHit(tx, ty, damage) {
+    if (this.isTransforming) {
+      sfx.playShieldBlock();
+      spawnFloatingText('⚡ TRANSFORMING...', this.x, this.y, '#ffaa00');
+      return true;
+    }
+
     const bx = this.x;
     const by = this.y;
 
-    // 先檢測是否打中任一條蛛腿
-    for (let leg of this.legs) {
-      if (leg.alive) {
-        const lx = bx + leg.relX;
-        const ly = by + leg.relY;
-        if (Math.hypot(tx - lx, ty - ly) < 22) {
-          leg.hp -= damage;
-          sfx.playHitSound();
-          spawnExplosion(tx, ty, '#00ff88');
-          if (leg.hp <= 0) {
-            leg.alive = false;
-            sfx.playExplosion();
-            spawnExplosion(lx, ly, '#ff9900');
-            spawnFloatingText('LEG SEVERED!', lx, ly, '#00ff88');
+    if (this.currentPhase === 1) {
+      for (let leg of this.legs) {
+        if (leg.alive) {
+          const lx = bx + leg.relX;
+          const ly = by + leg.relY;
+          if (Math.hypot(tx - lx, ty - ly) < 24) {
+            leg.hp -= damage;
+            sfx.playHitSound();
+            spawnExplosion(tx, ty, '#00ff88');
+            if (leg.hp <= 0) {
+              leg.alive = false;
+              sfx.playExplosion();
+              spawnExplosion(lx, ly, '#ff9900');
+              const remaining = this.legs.filter(l => l.alive).length;
+              spawnFloatingText(`LEG SEVERED! (${remaining} LEFT)`, lx, ly, '#00ff88');
+            }
+            return true;
           }
-          return true;
         }
       }
-    }
 
-    // 檢測打中中央複眼
-    if (Math.hypot(tx - bx, ty - (by + 5)) < this.radius + 18) {
-      const aliveLegCount = this.legs.filter(l => l.alive).length;
-      const multiplier = aliveLegCount === 0 ? 3 : 1; // 癱瘓時 3 倍傷害！
-      const finalDmg = damage * multiplier;
-      this.hp -= finalDmg;
+      if (Math.hypot(tx - bx, ty - (by + 5)) < this.radius + 18) {
+        const aliveLegCount = this.legs.filter(l => l.alive).length;
+        if (aliveLegCount > 0) {
+          sfx.playShieldBlock();
+          spawnExplosion(tx, ty, '#00ff88');
+          spawnFloatingText(`🛡️ IMMUNE! (先斷腿剩餘 ${aliveLegCount}/4)`, bx, by, '#00ff88');
+          return true;
+        }
 
-      sfx.playHitSound();
-      spawnExplosion(tx, ty, '#ff0033');
-      spawnFloatingText(`-${finalDmg}!`, bx, by, '#ff0055');
+        const finalDmg = damage * 3;
+        this.phase1Hp -= finalDmg;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#ff0033');
+        spawnFloatingText(`💥 PARALYZED CRIT! -${finalDmg}`, bx, by, '#ff0055');
 
-      if (this.hp <= 0) {
-        destroyBoss();
+        if (this.phase1Hp <= 0) {
+          this.triggerPhase2();
+        }
+        return true;
       }
-      return true;
+    } else {
+      if (Math.hypot(tx - bx, ty - by) < 46) {
+        this.phase2Hp -= damage;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#ff00aa');
+        spawnFloatingText(`-${damage}`, bx, by, '#ff00aa');
+        if (this.phase2Hp <= 0) {
+          destroyBoss();
+        }
+        return true;
+      }
     }
     return false;
   }
 }
 
 // 👁️ BOSS 3：終焉天罰星核 (Ouroboros Celestial Core)
+// 一階：護盾完全偏折！瞄準旋轉間隙射擊 ➔ 雙命變身二階：超新星滅絕黑核引力漩渦
 class OuroborosCore {
   constructor() {
     this.x = canvas.width * 0.5;
     this.y = -130;
     this.targetY = 135;
-    this.hp = 38;
-    this.maxHp = 38;
     this.radius = 34;
     this.ringAngle1 = 0;
     this.ringAngle2 = 0;
     this.shootTimer = 0;
     this.summonTimer = 0;
+
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+
+    // 一階段血量
+    this.phase1Hp = 34;
+    this.phase1MaxHp = 34;
+
+    // 二階段血量
+    this.phase2Hp = 52;
+    this.phase2MaxHp = 52;
+    this.supernovaPulse = 0;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    this.radius = 48;
+    sfx.playBossTransform();
+    screenShake = 34;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 150);
+    showBossBanner('⚠️ SUPERNOVA DOOMSTAR COLLAPSE!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: SUPERNOVA DOOMSTAR!!', this.x, this.y, '#00ffff');
+
+    for (let i = 0; i < 14; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 200, this.y + (Math.random() - 0.5) * 120, '#00ffff');
+        spawnExplosion(this.x + (Math.random() - 0.5) * 140, this.y + (Math.random() - 0.5) * 80, '#ff00aa');
+      }, i * 75);
+    }
   }
 
   update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) {
+        this.isTransforming = false;
+      }
+      return;
+    }
+
     if (this.y < this.targetY) {
       this.y += (this.targetY - this.y) * 0.03 * timeScale + 0.5;
     } else {
-      // 雙環反向高速旋轉
-      this.ringAngle1 += 0.04 * timeScale;
-      this.ringAngle2 -= 0.06 * timeScale;
+      if (this.currentPhase === 1) {
+        this.ringAngle1 += 0.032 * timeScale;
+        this.ringAngle2 -= 0.05 * timeScale;
 
-      // 扇形 4 連發能量球
-      this.shootTimer += dt * timeScale;
-      if (this.shootTimer > 2.4) {
-        this.shootTimer = 0;
-        sfx.playBossLaser();
-        for (let ang of [-0.3, -0.1, 0.1, 0.3]) {
-          const b = new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 200, this.y + Math.cos(ang) * 200);
-          enemyBullets.push(b);
+        this.shootTimer += dt * timeScale;
+        if (this.shootTimer > 2.2) {
+          this.shootTimer = 0;
+          sfx.playBossLaser();
+          for (let ang of [-0.3, -0.1, 0.1, 0.3]) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 200, this.y + Math.cos(ang) * 200, 3.8, '#ff00aa'));
+          }
         }
-      }
+      } else {
+        this.supernovaPulse += dt * 5 * timeScale;
+        this.ringAngle1 += 0.08 * timeScale;
 
-      // 每 7 秒召喚 1 隻自爆衝鋒怪護衛
-      this.summonTimer += dt * timeScale;
-      if (this.summonTimer > 7.0 && enemies.length < 3) {
-        this.summonTimer = 0;
-        enemies.push(new KamikazeDrone());
-        spawnFloatingText('⚠️ MINION SUMMONED!', this.x, this.y + 45, '#ff0055');
+        this.shootTimer += dt * timeScale;
+        if (this.shootTimer > 1.4) {
+          this.shootTimer = 0;
+          sfx.playBossLaser();
+          for (let i = 0; i < 6; i++) {
+            const a = this.ringAngle1 + (i * Math.PI) / 3;
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(a) * 220, this.y + Math.sin(a) * 220, 4.5, '#00ffff', 16));
+          }
+        }
+
+        this.summonTimer += dt * timeScale;
+        if (this.summonTimer > 6.0 && enemies.length < 3) {
+          this.summonTimer = 0;
+          enemies.push(new KamikazeDrone());
+          spawnFloatingText('⚠️ MINION SUMMONED!', this.x, this.y + 45, '#ff0055');
+        }
       }
     }
   }
@@ -1780,89 +2138,181 @@ class OuroborosCore {
   draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
+    const isP2 = this.currentPhase === 2;
 
-    // 1. 外層順時針護盾環 (帶有擋子彈的幾何板塊)
-    ctx.save();
-    ctx.rotate(this.ringAngle1);
-    ctx.strokeStyle = '#00f0ff';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = '#00f0ff';
-    ctx.shadowBlur = 15;
-    for (let i = 0; i < 4; i++) {
-      ctx.rotate(Math.PI / 2);
-      ctx.strokeRect(-55, -8, 25, 16);
-    }
-    ctx.restore();
+    if (!isP2) {
+      // 1. 外層旋轉雙高能護盾板塊 (具有明確物理實體防護弧段與旋轉空隙)
+      ctx.save();
+      ctx.rotate(this.ringAngle1);
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 6;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 18;
 
-    // 2. 內層逆時針護盾環
-    ctx.save();
-    ctx.rotate(this.ringAngle2);
-    ctx.strokeStyle = '#ff00aa';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = '#ff00aa';
-    ctx.shadowBlur = 12;
-    for (let i = 0; i < 3; i++) {
-      ctx.rotate((Math.PI * 2) / 3);
+      // 板塊 A: 0 ~ 2.18 rad (125度)
       ctx.beginPath();
-      ctx.arc(0, 42, 12, 0, Math.PI * 2);
+      ctx.arc(0, 0, 56, 0, 2.18);
       ctx.stroke();
+
+      // 板塊 B: PI ~ PI + 2.18 rad
+      ctx.beginPath();
+      ctx.arc(0, 0, 56, Math.PI, Math.PI + 2.18);
+      ctx.stroke();
+      ctx.restore();
+
+      // 2. 內層旋轉晶環
+      ctx.save();
+      ctx.rotate(this.ringAngle2);
+      ctx.strokeStyle = 'rgba(255, 0, 170, 0.6)';
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 3; i++) {
+        ctx.rotate((Math.PI * 2) / 3);
+        ctx.beginPath();
+        ctx.arc(0, 40, 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 3. 中央終焉神核
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff0055';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 血條 (Phase 1/2)
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-80, -this.radius - 28, 160, 8);
+      ctx.fillStyle = '#ff00aa';
+      ctx.fillRect(-80, -this.radius - 28, 160 * Math.max(0, this.phase1Hp / this.phase1MaxHp), 8);
+
+      ctx.fillStyle = '#00f0ff';
+      ctx.font = '900 10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('OUROBOROS CELESTIAL CORE · PHASE 1/2', 0, -this.radius - 34);
+      ctx.fillText('⚠️ 護盾偏折！瞄準旋轉間隙射擊！', 0, this.radius + 30);
+    } else {
+      // 1. 吸積盤引力漩渦 (Accretion Disk)
+      ctx.save();
+      ctx.rotate(this.ringAngle1);
+      const gradient = ctx.createRadialGradient(0, 0, 30, 0, 0, 95);
+      gradient.addColorStop(0, 'rgba(0, 255, 255, 0.8)');
+      gradient.addColorStop(0.5, 'rgba(255, 0, 170, 0.5)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, 95, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#00ffff';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 25;
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(35, 0);
+        ctx.lineTo(95 + Math.sin(this.supernovaPulse) * 12, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 2. 超重力滅絕黑核 (事件視界)
+      ctx.fillStyle = '#05020a';
+      ctx.strokeStyle = '#00ffff';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = '#ff00aa';
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ff00aa';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.45 + Math.sin(this.supernovaPulse) * 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 血條 (Phase 2/2)
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(-85, -this.radius - 30, 170, 8);
+      ctx.fillStyle = '#00ffff';
+      ctx.fillRect(-85, -this.radius - 30, 170 * Math.max(0, this.phase2Hp / this.phase2MaxHp), 8);
+
+      ctx.fillStyle = '#ffea00';
+      ctx.font = '900 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠️ SUPERNOVA DOOMSTAR · PHASE 2/2 ⚠️', 0, -this.radius - 36);
     }
-    ctx.restore();
-
-    // 3. 中央終焉神核
-    ctx.fillStyle = '#fff';
-    ctx.shadowColor = '#00f0ff';
-    ctx.shadowBlur = 25;
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#ff0055';
-    ctx.beginPath();
-    ctx.arc(0, 0, this.radius * 0.55, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 血條
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(-80, -this.radius - 28, 160, 8);
-    ctx.fillStyle = '#ff00aa';
-    ctx.fillRect(-80, -this.radius - 28, 160 * Math.max(0, this.hp / this.maxHp), 8);
-
-    ctx.fillStyle = '#fff';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('OUROBOROS CELESTIAL CORE', 0, -this.radius - 34);
 
     ctx.restore();
   }
 
   onHit(tx, ty, damage) {
+    if (this.isTransforming) {
+      sfx.playShieldBlock();
+      spawnFloatingText('⚡ TRANSFORMING...', this.x, this.y, '#ffaa00');
+      return true;
+    }
+
     const bx = this.x;
     const by = this.y;
     const d = Math.hypot(tx - bx, ty - by);
 
-    // 護盾判定：若打在外環板塊角度區間且沒有穿透技能，有 40% 機率被擋開
-    const isPiercing = activePerks.clusterLevel > 0;
-    if (d > this.radius && d < 65 && !isPiercing) {
-      if (Math.random() < 0.45) {
-        sfx.playHitSound();
-        spawnFloatingText('🛡️ BLOCKED!', tx, ty, '#00f0ff');
+    if (this.currentPhase === 1) {
+      const isRailgun = currentWeapon === 'RAILGUN';
+
+      // 檢測射擊命中角度是否被外層旋轉護盾偏折
+      const hitAngle = Math.atan2(ty - by, tx - bx);
+      let relAngle = (hitAngle - this.ringAngle1) % (Math.PI * 2);
+      if (relAngle < 0) relAngle += Math.PI * 2;
+
+      // 兩段實體板塊：[0, 2.18 rad (125度)] 以及 [PI, PI + 2.18 rad]
+      const inShield1 = (relAngle >= 0 && relAngle <= 2.18);
+      const inShield2 = (relAngle >= Math.PI && relAngle <= Math.PI + 2.18);
+      const isBlockedByShield = (inShield1 || inShield2);
+
+      if (isBlockedByShield && !isRailgun) {
+        sfx.playShieldBlock();
+        spawnExplosion(tx, ty, '#00f0ff');
+        spawnFloatingText('🛡️ SHIELD DEFLECTED! (瞄準旋轉間隙)', bx, by, '#00f0ff');
         return true;
       }
-    }
 
-    // 擊中中央神核
-    if (d < this.radius + 20) {
-      this.hp -= damage;
-      sfx.playHitSound();
-      spawnExplosion(tx, ty, '#ff00aa');
-      spawnFloatingText(`CRITICAL! -${damage}`, bx, by, '#ff00aa');
+      // 成功鑽過旋轉間隙，或使用高能軌道砲直接貫穿！
+      if (d < 65) {
+        this.phase1Hp -= damage;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, isRailgun ? '#00ffff' : '#ff00aa');
+        const tag = isRailgun ? '⚡ RAILGUN PIERCE!' : '💥 APERTURE HIT!';
+        spawnFloatingText(`${tag} -${damage}`, bx, by, '#ff00aa');
 
-      if (this.hp <= 0) {
-        destroyBoss();
+        if (this.phase1Hp <= 0) {
+          this.triggerPhase2();
+        }
+        return true;
       }
-      return true;
+    } else {
+      // 二階段判定：攻擊滅絕黑核
+      if (d < this.radius + 20) {
+        this.phase2Hp -= damage;
+        sfx.playHitSound();
+        spawnExplosion(tx, ty, '#00ffff');
+        spawnFloatingText(`-${damage}`, bx, by, '#00ffff');
+
+        if (this.phase2Hp <= 0) {
+          destroyBoss();
+        }
+        return true;
+      }
     }
     return false;
   }
