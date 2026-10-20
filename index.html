@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Finger-Gun AR 5.1 | 極限效能防卡死 · 三大 BOSS 戰</title>
+  <title>Cyber Finger-Gun AR 6.0 | 四大神兵極限火力 · 三大傳奇 BOSS</title>
   <style>
     * {
       box-sizing: border-box;
@@ -415,19 +415,18 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 5.1</div>
+    <div class="modal-title">CYBER FINGER GUN 6.0</div>
     <div class="modal-desc">
-      極簡實景 FPS × 三大傳奇 BOSS 輪番登場 × 肉鴿晶片！<br>
-      手感純粹進化，大拇指靈活扣扳機，重疊絕不走火！
+      極簡實景 FPS × 四大神兵極限火力 × 三大傳奇 BOSS！<br>
+      純拇指動態扳機 · 拒絕重疊走火 · 支援極速連射與高能聚能！
     </div>
     <div class="gesture-guide">
-      👉 <b>單指手槍</b>：食指瞄準，向下扣動大拇指開火！<br>
-      💥 <b>雙指霰彈</b>：食指＋中指併攏，扇形 5 發大範圍覆蓋！<br>
-      👑 <b>三大傳奇 BOSS 輪番降臨</b>：<br>
-      &nbsp;&nbsp;1. 🛸 15 殺：<b>巡洋母艦</b> (轟碎兩翼浮游護盾，直擊核心)<br>
-      &nbsp;&nbsp;2. 🕷️ 35 殺：<b>虛空機械巨蛛</b> (打斷4隻蛛腿使其癱瘓3倍暴擊)<br>
-      &nbsp;&nbsp;3. 👁️ 60 殺：<b>終焉天罰星核</b> (雙旋轉星環護盾，穿透轟殺)<br>
-      🎁 <b>射擊拾取晶片</b>：打爆空中懸浮晶片，固定 4 格無遮擋升級！
+      🔫 <b>單指手槍</b>：食指瞄準，大拇指單次下扣開火！<br>
+      🌪️ <b>加特林機槍</b>：扣下拇指<b>按住不放</b>，85ms 極速暴風掃射！<br>
+      ⚡ <b>高能軌道砲</b>：大拇指<b>立起瞄準 1 秒蓄滿</b>，下扣貫穿整條螢幕！<br>
+      💥 <b>雙指霰彈槍</b>：食指＋中指併攏瞄準，扇形 5 發大範圍覆蓋！<br>
+      👑 <b>三大傳奇 BOSS 輪番降臨</b>：15 殺巡洋母艦 / 35 殺機械巨蛛 / 60 殺終焉星核！<br>
+      🎁 <b>射擊拾取晶片</b>：打爆空中懸浮晶片，升級電弧、高爆、子彈時間與護盾！
     </div>
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始挑戰</button>
   </div>
@@ -504,6 +503,80 @@ class SoundSynthesizer {
       osc.stop(now + 0.32);
     }
     this.playNoisePunch(0.2, 0.7);
+  }
+
+  // 🌪️ 加特林機槍開火音效 (高射速、短促金屬脆響)
+  playMinigunShot() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(650, now);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.08);
+    this.playNoisePunch(0.04, 0.25);
+  }
+
+  // ⚡ 軌道砲蓄力聚能嗡鳴 (由低升至高頻)
+  startRailgunHum(ratio) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    if (!this.railgunOsc) {
+      this.railgunOsc = this.ctx.createOscillator();
+      this.railgunGain = this.ctx.createGain();
+      this.railgunOsc.type = 'sine';
+      this.railgunOsc.frequency.setValueAtTime(180, now);
+      this.railgunGain.gain.setValueAtTime(0.01, now);
+      this.railgunOsc.connect(this.railgunGain);
+      this.railgunGain.connect(this.ctx.destination);
+      this.railgunOsc.start();
+    }
+    const freq = 180 + ratio * 600;
+    this.railgunOsc.frequency.setValueAtTime(freq, now);
+    this.railgunGain.gain.setValueAtTime(0.05 + ratio * 0.12, now);
+  }
+
+  stopRailgunHum() {
+    if (this.railgunOsc) {
+      try {
+        this.railgunOsc.stop();
+        this.railgunOsc.disconnect();
+      } catch (e) {}
+      this.railgunOsc = null;
+      this.railgunGain = null;
+    }
+  }
+
+  // ⚡ 軌道砲高能電磁貫穿爆裂音
+  playRailgunBlast() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.stopRailgunHum();
+
+    for (let f of [550, 220, 110]) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.exponentialRampToValueAtTime(25, now + 0.45);
+
+      gain.gain.setValueAtTime(0.7, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.48);
+    }
+    this.playNoisePunch(0.35, 0.9);
   }
 
   playNoisePunch(duration, volume) {
@@ -833,12 +906,17 @@ const activePerks = {
   nanoShieldHp: 0      // 🛡️ 奈米護盾當前數值
 };
 
-// 手勢與武器狀態 (純粹大拇指動態扳機 · 拒絕重疊走火)
-let currentWeapon = 'PISTOL';
+// 手勢與四大神兵狀態
+let currentWeapon = 'PISTOL'; // 'PISTOL' | 'SHOTGUN' | 'MINIGUN' | 'RAILGUN'
 let isGunDetected = false;
-let isThumbReady = false; // 大拇指上膛狀態 (立起為 Ready，扣下後必須重新立起才能再開火)
+let isThumbReady = false;
+let railgunChargeTimer = 0;   // 軌道砲蓄力時間 (立起 1.1s 蓄滿)
+let isRailgunCharged = false; // 軌道砲是否蓄力滿 100%
+let thumbDownTimer = 0;       // 拇指扣下持續時間 (進入加特林連射)
+let canTriggerAutofire = false; // 只有在剛開火後保持拇指下扣才會觸發加特林，防止登場走火
 let lastFireTime = 0;
-let lastValidGunTime = 0; // 姿態記憶緩衝時間戳 (扣動重疊時絕不閃退)
+let lastValidGunTime = 0;
+let lastHandTimestamp = 0;
 let gunCrosshair = { x: -100, y: -100, targetX: -100, targetY: -100, active: false };
 let muzzlePos = { x: -100, y: -100 };
 let currentHandLandmarks = null;
@@ -1847,6 +1925,14 @@ function restartGame() {
   document.getElementById('slot-nano').innerText = '🛡️ --';
   bulletTimeOverlay.style.opacity = '0';
   sfx.isBulletTime = false;
+  sfx.stopRailgunHum();
+
+  currentWeapon = 'PISTOL';
+  railgunChargeTimer = 0;
+  isRailgunCharged = false;
+  thumbDownTimer = 0;
+  canTriggerAutofire = false;
+  isThumbReady = false;
 
   isGameOver = false;
   scoreElem.innerText = score;
@@ -1912,17 +1998,36 @@ function triggerTeslaChain(originEnemy) {
 }
 
 // ==========================================
-// 5. 射擊系統 (支援肉鴿高爆穿透 & 射擊撿晶片)
+// 5. 射擊系統 (四大神兵：手槍 / 霰彈 / 加特林 / 軌道砲)
 // ==========================================
 function executeFire(originX, originY, targetX, targetY) {
   const now = Date.now();
   const isShotgun = currentWeapon === 'SHOTGUN';
-  const cooldown = isShotgun ? 320 : 180;
+  const isRailgun = currentWeapon === 'RAILGUN';
+  const isMinigun = currentWeapon === 'MINIGUN';
+
+  let cooldown = 170;
+  if (isMinigun) cooldown = 85;
+  else if (isShotgun) cooldown = 320;
+  else if (isRailgun) cooldown = 480;
 
   if (now - lastFireTime < cooldown) return;
   lastFireTime = now;
 
-  if (isShotgun) {
+  // 1. 音效、震動與光影
+  if (isRailgun) {
+    sfx.playRailgunBlast();
+    screenShake = 22;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 140);
+    if (navigator.vibrate) navigator.vibrate([100, 30, 80]);
+  } else if (isMinigun) {
+    sfx.playMinigunShot();
+    screenShake = 5;
+    flashOverlay.style.opacity = '0.45';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 35);
+    if (navigator.vibrate) navigator.vibrate([18]);
+  } else if (isShotgun) {
     sfx.playShotgun();
     screenShake = 18;
     flashOverlay.style.opacity = '1';
@@ -1936,21 +2041,40 @@ function executeFire(originX, originY, targetX, targetY) {
     if (navigator.vibrate) navigator.vibrate([30]);
   }
 
-  // 1. 射擊拾取肉鴿晶片檢測 (Shoot-to-Equip)
+  // 2. 射擊拾取肉鴿晶片檢測 (Shoot-to-Equip)
   for (let i = floatingChips.length - 1; i >= 0; i--) {
     const chip = floatingChips[i];
     const dist = Math.hypot(targetX - chip.x, targetY - chip.y);
-    if (dist < chip.radius + 25) {
+    if (dist < chip.radius + (isRailgun ? 50 : 25)) {
       equipPerk(chip.def);
       spawnExplosion(chip.x, chip.y, chip.def.color);
       floatingChips.splice(i, 1);
-      return; // 晶片吸附成功
+      if (!isRailgun) return;
     }
   }
 
-  // 2. 構建射擊彈道
+  // 3. 構建射擊彈道
   const pellets = [];
-  if (isShotgun) {
+  if (isRailgun) {
+    // ⚡ 巨型貫穿光柱：直通螢幕遠端
+    const angle = Math.atan2(targetY - originY, targetX - originX);
+    pellets.push({
+      tx: originX + Math.cos(angle) * 1200,
+      ty: originY + Math.sin(angle) * 1200,
+      color: '#00ffff',
+      isRailgun: true
+    });
+  } else if (isMinigun) {
+    // 🌪️ 加特林微發散高速彈
+    const angle = Math.atan2(targetY - originY, targetX - originX) + (Math.random() - 0.5) * 0.08;
+    const len = Math.hypot(targetX - originX, targetY - originY) || 300;
+    pellets.push({
+      tx: originX + Math.cos(angle) * len,
+      ty: originY + Math.sin(angle) * len,
+      color: '#ffea00'
+    });
+  } else if (isShotgun) {
+    // 💥 霰彈 5 連發扇形
     const baseAngle = Math.atan2(targetY - originY, targetX - originX);
     const spreadAngles = [-0.22, -0.11, 0, 0.11, 0.22];
     const len = Math.hypot(targetX - originX, targetY - originY) || 300;
@@ -1964,6 +2088,7 @@ function executeFire(originX, originY, targetX, targetY) {
       });
     }
   } else {
+    // 👉 單發手槍
     pellets.push({
       tx: targetX,
       ty: targetY,
@@ -1971,33 +2096,40 @@ function executeFire(originX, originY, targetX, targetY) {
     });
   }
 
-  // 3. 繪製雷射與穿透判定
+  // 4. 繪製雷射與穿透碰撞判定
   for (let p of pellets) {
     laserBeams.push({
       x1: originX, y1: originY,
       x2: p.tx, y2: p.ty,
       color: p.color,
+      width: isRailgun ? 16 : (isShotgun ? 6 : 4),
       alpha: 1
     });
 
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-      const dist = Math.hypot(p.tx - e.x, p.ty - e.y);
-      if (dist < e.radius + 24) {
-        const damage = 1 + activePerks.clusterLevel;
+      // 軌道砲判定線段距離，其餘判定點距離
+      let hit = false;
+      if (isRailgun) {
+        hit = distToSegment({ x: originX, y: originY }, { x: p.tx, y: p.ty }, { x: e.x, y: e.y }) < e.radius + 35;
+      } else {
+        hit = Math.hypot(p.tx - e.x, p.ty - e.y) < e.radius + 24;
+      }
+
+      if (hit) {
+        const damage = isRailgun ? (8 + activePerks.clusterLevel * 2) : (1 + activePerks.clusterLevel);
         e.hp -= damage;
         sfx.playHitSound();
 
         // 💥 高爆穿透 AOE
-        if (activePerks.clusterLevel > 0) {
-          spawnExplosion(p.tx, p.ty, '#ff5500');
+        if (activePerks.clusterLevel > 0 || isRailgun) {
+          spawnExplosion(isRailgun ? e.x : p.tx, isRailgun ? e.y : p.ty, isRailgun ? '#00ffff' : '#ff5500');
         }
 
         if (e.hp <= 0) {
           sfx.playExplosion();
           spawnExplosion(e.x, e.y, e.type === 'KAMIKAZE' ? '#ff3300' : '#00ffff');
 
-          // ⚡ 連環高壓電弧觸發
           if (activePerks.teslaLevel > 0) {
             triggerTeslaChain(e);
           }
@@ -2008,7 +2140,7 @@ function executeFire(originX, originY, targetX, targetY) {
           lastHitTime = now;
 
           const basePoints = e.type === 'KAMIKAZE' ? 250 : 100;
-          const points = basePoints * combo;
+          const points = basePoints * combo * (isRailgun ? 2 : 1);
           score += points;
           scoreElem.innerText = score;
 
@@ -2017,7 +2149,7 @@ function executeFire(originX, originY, targetX, targetY) {
             comboElem.classList.add('active');
           }
 
-          spawnFloatingText(`+${points}`, e.x, e.y, e.type === 'KAMIKAZE' ? '#ffaa00' : '#00ff88');
+          spawnFloatingText(`+${points}`, e.x, e.y, isRailgun ? '#00ffff' : (e.type === 'KAMIKAZE' ? '#ffaa00' : '#00ff88'));
           enemies.splice(i, 1);
 
           // 🎁 每滿 7 殺掉落一次肉鴿晶片！
@@ -2032,32 +2164,45 @@ function executeFire(originX, originY, targetX, targetY) {
           }
         }
 
-        if (activePerks.clusterLevel === 0) {
-          break; // 若沒有穿透技能，子彈被消耗
+        if (!isRailgun && activePerks.clusterLevel === 0) {
+          break; // 若非軌道砲且無穿透，子彈被消耗
         }
       }
     }
 
-    // 4. 擊落敵方能量光彈 (防禦攔截)
+    // 5. 擊落敵方能量光彈
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const b = enemyBullets[i];
-      if (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 20) {
+      const bulletHit = isRailgun 
+        ? (distToSegment({ x: originX, y: originY }, { x: p.tx, y: p.ty }, { x: b.x, y: b.y }) < b.radius + 30)
+        : (Math.hypot(p.tx - b.x, p.ty - b.y) < b.radius + 20);
+
+      if (bulletHit) {
         sfx.playHitSound();
         spawnExplosion(b.x, b.y, '#00f0ff');
         enemyBullets.splice(i, 1);
         score += 50;
         scoreElem.innerText = score;
         spawnFloatingText('INTERCEPTED! +50', b.x, b.y, '#00f0ff');
-        break;
+        if (!isRailgun) break;
       }
     }
 
-    // 5. 攻擊當前登場的傳奇 BOSS 弱點判定
+    // 6. 攻擊傳奇 BOSS 弱點判定
     if (currentBoss && currentBoss.y > 0) {
-      const damage = 1 + activePerks.clusterLevel;
-      currentBoss.onHit(p.tx, p.ty, damage);
+      const damage = isRailgun ? (10 + activePerks.clusterLevel * 3) : (1 + activePerks.clusterLevel);
+      currentBoss.onHit(isRailgun ? currentBoss.x : p.tx, isRailgun ? currentBoss.y : p.ty, damage);
     }
   }
+}
+
+// 點到線段距離公式 (軌道砲貫穿判定)
+function distToSegment(p1, p2, p) {
+  const l2 = Math.hypot(p2.x - p1.x, p2.y - p1.y) ** 2;
+  if (l2 === 0) return Math.hypot(p.x - p1.x, p.y - p1.y);
+  let t = ((p.x - p1.x) * (p2.x - p1.x) + (p.y - p1.y) * (p2.y - p1.y)) / l2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (p1.x + t * (p2.x - p1.x)), p.y - (p1.y + t * (p2.y - p1.y)));
 }
 
 // 點擊螢幕備用開火
@@ -2070,7 +2215,7 @@ window.addEventListener('pointerdown', (e) => {
 });
 
 // ==========================================
-// 6. MediaPipe 手勢辨識 (純大拇指動態扳機 · 重疊絕不走火)
+// 6. MediaPipe 手勢辨識 (純大拇指動態扳機 · 重疊絕不走火 · 四大神兵)
 // ==========================================
 function onResults(results) {
   if (isGameOver) return;
@@ -2083,9 +2228,17 @@ function onResults(results) {
       currentHandLandmarks = null;
       statusDot.className = 'status-dot';
       statusText.innerText = '尋找手部中... 請將手伸入鏡頭 👉';
+      sfx.stopRailgunHum();
+      railgunChargeTimer = 0;
+      isRailgunCharged = false;
+      thumbDownTimer = 0;
+      canTriggerAutofire = false;
     }
     return;
   }
+
+  const deltaHand = lastHandTimestamp ? Math.min((now - lastHandTimestamp) / 1000, 0.1) : 0.033;
+  lastHandTimestamp = now;
 
   const landmarks = results.multiHandLandmarks[0];
   const pts = landmarks.map(p => ({
@@ -2104,14 +2257,8 @@ function onResults(results) {
   const indexBase = dist(6, 5);
   const isIndexStraight = (indexLen > indexBase * 1.3) || (dist(8, 0) > dist(6, 0) * 1.15) || (now - lastValidGunTime < 400);
 
-  // 2. 中指伸展判定 (手槍 VS 霰彈槍)
+  // 2. 中指伸展判定 (手槍/加特林/軌道砲 VS 霰彈槍)
   const isMiddleStraight = dist(12, 9) > dist(10, 9) * 1.35 && dist(12, 0) > dist(8, 0) * 0.75;
-
-  if (isIndexStraight && isMiddleStraight) {
-    currentWeapon = 'SHOTGUN';
-  } else if (isIndexStraight) {
-    currentWeapon = 'PISTOL';
-  }
 
   if (isIndexStraight) {
     isGunDetected = true;
@@ -2127,34 +2274,111 @@ function onResults(results) {
     gunCrosshair.targetX = pts[8].x + (dirX / dirLen) * 140;
     gunCrosshair.targetY = pts[8].y + (dirY / dirLen) * 140;
 
-    // 3. 純大拇指動態扣扳機邏輯 (返璞歸真，重疊不走火)
-    // 計算拇指尖 (4) 到食指根 (5) 的距離
+    // 3. 純大拇指動態扣扳機邏輯
     const thumbDist = dist(4, 5) / palmSize;
-    const thumbSpeed = prevThumbDist - thumbDist; // 拇指向下扣的速度
+    const thumbSpeed = prevThumbDist - thumbDist;
     prevThumbDist = thumbDist;
 
-    // (A) 上膛 (Ready) 條件：大拇指必須明確立起/張開，才算上膛
-    if (thumbDist > 0.45) {
-      isThumbReady = true;
-      statusDot.className = 'status-dot ready';
-      statusText.innerText = currentWeapon === 'SHOTGUN' 
-        ? '💥 霰彈就緒！向下扣動大拇指開火！' 
-        : '🎯 瞄準中！向下扣動大拇指開火！';
-    } 
-    // (B) 開火 (Fire) 條件：
-    // 必須是在「已上膛 (isThumbReady)」狀態下，玩家「主動將拇指往下扣下」
-    else if (isThumbReady && (thumbDist < 0.36 || thumbSpeed > 0.065)) {
-      isThumbReady = false; // 消耗上膛狀態！扣下後維持重疊絕對不再開火，直到重新立起拇指
-      statusDot.className = 'status-dot';
-      statusText.innerText = '💥 FIRE!! 開火！';
-      executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+    const isThumbUp = thumbDist > 0.44;
+    const isThumbDown = thumbDist < 0.36 || thumbSpeed > 0.065;
+
+    if (isMiddleStraight) {
+      // 💥 模式 A：雙指霰彈槍模式
+      currentWeapon = 'SHOTGUN';
+      sfx.stopRailgunHum();
+      railgunChargeTimer = 0;
+      isRailgunCharged = false;
+      thumbDownTimer = 0;
+      canTriggerAutofire = false;
+
+      if (isThumbUp) {
+        isThumbReady = true;
+        statusDot.className = 'status-dot ready';
+        statusText.innerText = '💥 雙指霰彈就緒！向下扣動大拇指開火！';
+      } else if (isThumbDown && isThumbReady) {
+        isThumbReady = false;
+        statusDot.className = 'status-dot';
+        statusText.innerText = '💥 FIRE!! 霰彈轟擊！';
+        executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+      }
+    } else {
+      // 👉 模式 B：單指模式 (支援 手槍點射 / 加特林暴風掃射 / 軌道砲高能蓄力)
+      if (isThumbUp) {
+        // 大拇指立起：進入上膛 Ready 狀態，開始聚能軌道砲
+        isThumbReady = true;
+        canTriggerAutofire = false;
+        thumbDownTimer = 0;
+        railgunChargeTimer += deltaHand;
+
+        if (railgunChargeTimer > 0.25) {
+          const ratio = Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85);
+          sfx.startRailgunHum(ratio);
+
+          if (railgunChargeTimer >= 1.1) {
+            isRailgunCharged = true;
+            currentWeapon = 'RAILGUN';
+            statusDot.className = 'status-dot ready';
+            statusText.innerText = '⚡ 軌道砲 100% 充能完畢！向下扣下拇指發射貫穿全場！';
+          } else {
+            currentWeapon = 'PISTOL';
+            const pct = Math.floor(ratio * 100);
+            statusDot.className = 'status-dot ready';
+            statusText.innerText = `⚡ 軌道砲聚能中 ${pct}% ... (立起保持聚能)`;
+          }
+        } else {
+          currentWeapon = 'PISTOL';
+          isRailgunCharged = false;
+          statusDot.className = 'status-dot ready';
+          statusText.innerText = '🎯 瞄準中！扣下拇指單發 / 按住不放加特林 / 立起 1 秒軌道砲蓄力';
+        }
+      } else if (isThumbDown) {
+        sfx.stopRailgunHum();
+
+        if (isThumbReady) {
+          // 剛剛由立起 (Ready) 扣下扳機 -> 開火！
+          isThumbReady = false;
+          canTriggerAutofire = true; // 開火後保持下扣才允許進入加特林連射
+          thumbDownTimer = 0;
+
+          if (isRailgunCharged) {
+            currentWeapon = 'RAILGUN';
+            executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+            railgunChargeTimer = 0;
+            isRailgunCharged = false;
+            canTriggerAutofire = false; // 軌道砲發射後不連射加特林
+            currentWeapon = 'PISTOL';
+            statusDot.className = 'status-dot';
+            statusText.innerText = '⚡ 軌道砲高能貫穿！轟碎全場！';
+          } else {
+            currentWeapon = 'PISTOL';
+            executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+            railgunChargeTimer = 0;
+            statusDot.className = 'status-dot';
+            statusText.innerText = '🔫 FIRE!! 單發手槍 (保持按住拇指進入加特林掃射)';
+          }
+        } else if (canTriggerAutofire) {
+          // 玩家開火後持續按住大拇指不放 -> 加特林暴風掃射！
+          thumbDownTimer += deltaHand;
+          if (thumbDownTimer > 0.20) {
+            currentWeapon = 'MINIGUN';
+            statusDot.className = 'status-dot';
+            statusText.innerText = '🌪️ 加特林極速暴風連射中！！';
+            executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+          }
+        }
+      }
     }
   } else {
     if (now - lastValidGunTime > 400) {
       isGunDetected = false;
       gunCrosshair.active = false;
+      sfx.stopRailgunHum();
+      railgunChargeTimer = 0;
+      isRailgunCharged = false;
+      thumbDownTimer = 0;
+      canTriggerAutofire = false;
       statusDot.className = 'status-dot';
-      statusText.innerText = '請比出手指槍：單指 👉 手槍 / 雙指 ✌️ 霰彈';
+      statusText.innerText = '請比出手指槍：單指 👉 手槍/加特林/軌道砲 / 雙指 ✌️ 霰彈';
     }
   }
 }
@@ -2317,13 +2541,24 @@ function gameLoop() {
     const beam = laserBeams[i];
     ctx.save();
     ctx.strokeStyle = beam.color || '#00f0ff';
-    ctx.lineWidth = currentWeapon === 'SHOTGUN' ? 6 : 4;
+    ctx.lineWidth = beam.width || 4;
     ctx.shadowColor = ctx.strokeStyle;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = (beam.width && beam.width > 10) ? 24 : 12;
     ctx.beginPath();
     ctx.moveTo(beam.x1, beam.y1);
     ctx.lineTo(beam.x2, beam.y2);
     ctx.stroke();
+
+    // 軌道砲高能貫穿光束：內部白色高溫雷射芯
+    if (beam.width && beam.width > 10) {
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = beam.width * 0.35;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(beam.x1, beam.y1);
+      ctx.lineTo(beam.x2, beam.y2);
+      ctx.stroke();
+    }
     ctx.restore();
 
     beam.alpha -= 0.12;
@@ -2390,7 +2625,7 @@ function gameLoop() {
       ctx.stroke();
     }
 
-    ctx.fillStyle = currentWeapon === 'SHOTGUN' ? '#ffaa00' : '#00f0ff';
+    ctx.fillStyle = currentWeapon === 'SHOTGUN' ? '#ffaa00' : (currentWeapon === 'MINIGUN' ? '#ff3b30' : '#00f0ff');
     ctx.beginPath();
     ctx.arc(pts[8].x, pts[8].y, 6, 0, Math.PI * 2);
     if (currentWeapon === 'SHOTGUN') ctx.arc(pts[12].x, pts[12].y, 6, 0, Math.PI * 2);
@@ -2400,10 +2635,48 @@ function gameLoop() {
     ctx.beginPath();
     ctx.arc(pts[4].x, pts[4].y, 6, 0, Math.PI * 2);
     ctx.fill();
+
+    // ⚡ 繪製食指槍口能量特效 (軌道砲蓄能球 / 加特林槍口火光)
+    if (railgunChargeTimer > 0.25 && muzzlePos.x > 0) {
+      const chargeRatio = Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85);
+      const orbRadius = 6 + chargeRatio * 16 + Math.sin(now * 0.02) * 2;
+      ctx.beginPath();
+      ctx.arc(muzzlePos.x, muzzlePos.y, orbRadius, 0, Math.PI * 2);
+      ctx.fillStyle = isRailgunCharged ? 'rgba(0, 255, 255, 0.85)' : 'rgba(0, 220, 255, 0.45)';
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 20 + chargeRatio * 15;
+      ctx.fill();
+
+      // 核心高溫白光
+      ctx.beginPath();
+      ctx.arc(muzzlePos.x, muzzlePos.y, orbRadius * 0.45, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      // 聚能電弧跳躍
+      if (Math.random() < 0.6) {
+        const sparkAng = Math.random() * Math.PI * 2;
+        const sparkDist = orbRadius * (1.2 + Math.random() * 0.8);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(muzzlePos.x + Math.cos(sparkAng) * sparkDist, muzzlePos.y + Math.sin(sparkAng) * sparkDist);
+        ctx.lineTo(muzzlePos.x, muzzlePos.y);
+        ctx.stroke();
+      }
+    } else if (currentWeapon === 'MINIGUN' && Date.now() - lastFireTime < 65 && muzzlePos.x > 0) {
+      // 加特林射擊槍口金色暴風火花
+      ctx.fillStyle = '#ffee00';
+      ctx.shadowColor = '#ff6600';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(muzzlePos.x, muzzlePos.y, 8 + Math.random() * 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
-  // 9. 繪製準星 (帶武器微標籤，釋放頂部視野)
+  // 9. 繪製四大神兵專屬動態準星 (帶武器微標籤，釋放頂部視野)
   if (gunCrosshair.active) {
     if (gunCrosshair.x === -100) {
       gunCrosshair.x = gunCrosshair.targetX;
@@ -2418,18 +2691,39 @@ function gameLoop() {
     ctx.save();
     ctx.translate(cx, cy);
 
-    const themeColor = currentWeapon === 'SHOTGUN' 
-      ? (isThumbReady ? '#ffaa00' : '#ff5500') 
-      : (isThumbReady ? '#00ff88' : '#00f0ff');
+    let themeColor = '#00f0ff';
+    if (currentWeapon === 'SHOTGUN') {
+      themeColor = isThumbReady ? '#ffaa00' : '#ff5500';
+    } else if (currentWeapon === 'MINIGUN') {
+      themeColor = '#ff3b30';
+    } else if (currentWeapon === 'RAILGUN' || (railgunChargeTimer > 0.25)) {
+      themeColor = isRailgunCharged ? '#00ffff' : '#33ccff';
+    } else {
+      themeColor = isThumbReady ? '#00ff88' : '#00f0ff';
+    }
 
     ctx.strokeStyle = themeColor;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = currentWeapon === 'RAILGUN' ? 3.5 : 2.5;
     ctx.shadowColor = themeColor;
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = isRailgunCharged ? 22 : 12;
+
+    const crosshairRadius = currentWeapon === 'SHOTGUN' ? 32 : (currentWeapon === 'MINIGUN' ? 20 : 24);
 
     ctx.beginPath();
-    ctx.arc(0, 0, currentWeapon === 'SHOTGUN' ? 32 : 24, 0, Math.PI * 2);
+    ctx.arc(0, 0, crosshairRadius, 0, Math.PI * 2);
     ctx.stroke();
+
+    // ⚡ 軌道砲蓄力環進度條
+    if (railgunChargeTimer > 0.25) {
+      const chargeRatio = Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85);
+      ctx.save();
+      ctx.strokeStyle = isRailgunCharged ? '#00ffff' : '#ffdd00';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, crosshairRadius + 7, -Math.PI / 2, -Math.PI / 2 + chargeRatio * Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if (currentWeapon === 'SHOTGUN') {
       for (let i = 0; i < 4; i++) {
@@ -2439,6 +2733,19 @@ function gameLoop() {
         ctx.arc(0, 32, 3, 0, Math.PI * 2);
         ctx.fill();
       }
+    } else if (currentWeapon === 'MINIGUN') {
+      // 加特林旋轉 3 點式齒輪標記
+      const spin = (Date.now() * 0.015) % (Math.PI * 2);
+      ctx.save();
+      ctx.rotate(spin);
+      for (let i = 0; i < 3; i++) {
+        ctx.rotate((Math.PI * 2) / 3);
+        ctx.fillStyle = '#ffaa00';
+        ctx.beginPath();
+        ctx.arc(0, 22, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
     ctx.beginPath();
@@ -2453,9 +2760,26 @@ function gameLoop() {
     ctx.fillStyle = themeColor;
     ctx.font = '900 11px sans-serif';
     ctx.textAlign = 'center';
-    const weaponLabel = currentWeapon === 'SHOTGUN' ? '💥 SHOTGUN' : '🔫 PISTOL';
-    const statusLabel = isThumbReady ? 'READY' : 'AIM';
-    ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, currentWeapon === 'SHOTGUN' ? 48 : 38);
+
+    let weaponLabel = '🔫 PISTOL';
+    let statusLabel = isThumbReady ? 'READY' : 'AIM';
+
+    if (currentWeapon === 'SHOTGUN') {
+      weaponLabel = '💥 SHOTGUN';
+      statusLabel = isThumbReady ? 'READY' : 'AIM';
+    } else if (currentWeapon === 'MINIGUN') {
+      weaponLabel = '🌪️ MINIGUN';
+      statusLabel = 'FIRING!';
+    } else if (isRailgunCharged) {
+      weaponLabel = '⚡ RAILGUN';
+      statusLabel = 'MAX CHARGED!';
+    } else if (railgunChargeTimer > 0.25) {
+      const pct = Math.floor(Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85) * 100);
+      weaponLabel = '⚡ RAILGUN';
+      statusLabel = `CHARGING ${pct}%`;
+    }
+
+    ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, crosshairRadius + 16);
 
     ctx.restore();
   }
