@@ -182,6 +182,48 @@
       transform: scale(1);
     }
 
+    /* 武器與技能解鎖進度列 (極簡通透，不佔視野) */
+    .weapon-rack {
+      display: flex;
+      gap: 5px;
+      margin-top: 3px;
+    }
+    .rack-slot {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(10, 16, 30, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      opacity: 0.35;
+      transition: all 0.25s ease-out;
+      user-select: none;
+    }
+    .rack-slot.unlocked {
+      opacity: 0.95;
+      border-color: rgba(0, 240, 255, 0.6);
+      background: rgba(0, 30, 60, 0.6);
+    }
+    .rack-slot.active {
+      opacity: 1;
+      border-color: #ffdd00;
+      box-shadow: 0 0 10px rgba(255, 221, 0, 0.7);
+      transform: scale(1.1);
+    }
+    .rack-slot .lock-icon {
+      position: absolute;
+      bottom: -3px;
+      right: -3px;
+      font-size: 8px;
+    }
+    .rack-slot.unlocked .lock-icon {
+      display: none;
+    }
+
     /* 已裝備肉鴿晶片固定槽位 (絕不遮擋視野) */
     .perks-inventory {
       display: flex;
@@ -412,6 +454,14 @@
           <span id="score" class="score-display">0</span>
           <span id="combo" class="combo-badge">3x</span>
         </div>
+        <!-- 武器解鎖進度列 (解鎖後啟動光效) -->
+        <div id="weapon-rack" class="weapon-rack">
+          <div id="rack-pistol" class="rack-slot unlocked active" title="🔫 手槍 (預設已解鎖)">🔫</div>
+          <div id="rack-shotgun" class="rack-slot" title="✌️ 雙指霰彈 (擊殺 5 隻解鎖)">✌️<span class="lock-icon">🔒</span></div>
+          <div id="rack-shield" class="rack-slot" title="✋ 全息護盾 (擊敗 BOSS 1 解鎖)">✋<span class="lock-icon">🔒</span></div>
+          <div id="rack-minigun" class="rack-slot" title="🌪️ 加特林 (擊敗 BOSS 2 解鎖)">🌪️<span class="lock-icon">🔒</span></div>
+          <div id="rack-railgun" class="rack-slot" title="⚡ 軌道砲 (擊敗 BOSS 3 解鎖)">⚡<span class="lock-icon">🔒</span></div>
+        </div>
         <!-- 已裝備肉鴿晶片固定槽位 (固定4格，等級升級，永不膨脹遮蔽) -->
         <div id="perks-inventory" class="perks-inventory">
           <div id="slot-tesla" class="perk-slot">⚡ --</div>
@@ -437,19 +487,15 @@
 
   <!-- 初始開始視窗 -->
   <div id="start-modal" class="modal-overlay">
-    <div class="modal-title">CYBER FINGER GUN 7.0</div>
+    <div class="modal-title">CYBER FINGER GUN 8.0</div>
     <div class="modal-desc">
-      極簡實景 FPS × 四大神兵 × 雙重防禦體系 × 三大 BOSS 二階狂暴變身！<br>
-      攻守兼備超凡手感！新增張掌全息護盾與隻狼式完美彈反！
+      極簡實景 FPS × 漸進科技樹解鎖 × 雙重防禦體系 × 10 大史詩 BOSS 巔峰討伐！<br>
+      手感極致絲滑！從基礎手槍起步，一步步解鎖雙指霰彈、張掌蜂巢盾、加特林暴風與毀滅軌道砲！
     </div>
     <div class="gesture-guide">
-      👉 <b>四大神兵</b>：單發手槍 / 扣住不放加特林 / 立起 1 秒軌道砲 / 雙指霰彈<br>
-      ✋ <b>張掌全息護盾</b>：危急時<b>五指全部張開 ✋</b>，展開蜂巢護盾抵擋傷害！<br>
-      ⚡ <b>隻狼式完美彈反</b>：敵方光彈即將砸臉時<b>開槍迎面擊爆</b>，觸發打鐵反彈！黃金穿甲光彈反噬敵機與 BOSS！<br>
-      👑 <b>三大傳奇 BOSS 雙命二階狂暴形態</b>：<br>
-      &nbsp;&nbsp;1. 🛸 <b>巡洋母艦</b>：破兩翼方可攻核心 ➔ 雙重重砲「滅世殲滅者」！<br>
-      &nbsp;&nbsp;2. 🕷️ <b>機械巨蛛</b>：複眼絕對無敵！必先打斷4條蛛腿 ➔ 六刃鐮刀「天啟災厄巨蛛」！<br>
-      &nbsp;&nbsp;3. 👁️ <b>終焉星核</b>：護盾實體偏折！必抓旋轉間隙射擊 ➔ 引力黑洞「超新星滅絕黑核」！
+      👉 <b>神兵科技樹解鎖</b>：初始手槍 ➔ 5殺解鎖<b>雙指霰彈</b> ➔ 擊敗BOSS依序解鎖<b>全息護盾、加特林、軌道砲與弒神超頻矩陣</b>！<br>
+      ⚔️ <b>隻狼式完美彈反</b>：敵方光彈即將命中時<b>開槍迎面擊爆</b>，觸發打鐵反彈！黃金穿甲光彈反蝕敵機與 BOSS！<br>
+      👑 <b>10 大傳奇 BOSS 巔峰討伐</b>：巡洋母艦 ➔ 幽浮母機 ➔ 機械巨蛛 ➔ 雙子星 ➔ 終焉星核 ➔ 稜鏡泰坦 ➔ 匿蹤戰隼 ➔ 熔爐巨獸 ➔ 深淵海妖 ➔ 始祖神性造物主！
     </div>
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始挑戰</button>
   </div>
@@ -460,6 +506,14 @@
     <div class="modal-desc">陣地失守！你遭到自爆無人機劇烈撞擊！</div>
     <div id="game-over-stats" class="game-over-stats">FINAL SCORE: 0</div>
     <button id="restart-btn" class="action-btn">滿血重新出擊</button>
+  </div>
+
+  <!-- 🏆 Game Victory 通關視窗 -->
+  <div id="victory-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-title" style="background: linear-gradient(135deg, #00f0ff, #ffee00); -webkit-background-clip: text;">GALAXY LIBERATOR</div>
+    <div class="modal-desc">👑 傳奇成就達成！你征服了全銀河系 10 大終極戰略首領！<br>所有科技神兵已臻化境，成為無可匹敵的賽博弒神者！</div>
+    <div id="victory-stats" class="game-over-stats">FINAL SCORE: 0</div>
+    <button id="victory-restart-btn" class="action-btn">開啟下一輪輪迴 (NEW GAME+)</button>
   </div>
 </div>
 
@@ -671,6 +725,28 @@ class SoundSynthesizer {
       osc.start(now + i * 0.06);
       osc.stop(now + i * 0.06 + 0.18);
     });
+  }
+
+  // 🔓 新神兵/技能解鎖震撼史詩音效
+  playUnlock() {
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      const notes = [440, 554.37, 659.25, 880, 1108.73]; // A4, C#5, E5, A5, C#6
+      notes.forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+        gain.gain.setValueAtTime(0.35, now + idx * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 0.35);
+      });
+      this.playNoisePunch(0.12, 0.4);
+    } catch (e) {}
   }
 
   playHitSound() {
@@ -1087,6 +1163,63 @@ let isShieldActive = false;
 let shieldBreakCooldown = 0;
 let shieldAnimTime = 0;
 
+// 漸進科技樹解鎖狀態 (解鎖新武器與終極被動)
+const unlockState = {
+  pistol: true,        // 預設手槍
+  parry: true,         // 預設彈反
+  shotgun: false,      // 擊殺 5 隻解鎖
+  shield: false,       // 擊敗 BOSS 1 (母艦) 解鎖
+  minigun: false,      // 擊敗 BOSS 2 (幽浮) 解鎖
+  railgun: false,      // 擊敗 BOSS 3 (巨蛛) 解鎖
+  overdrive: false,    // 擊敗 BOSS 4 (雙子星) 解鎖：射速+25%，護盾秒充翻倍
+  plasmaParry: false,  // 擊敗 BOSS 5 (星核) 解鎖：彈反反傷35，散射3枚追蹤爆彈
+  pierceBullets: false,// 擊敗 BOSS 6 (稜鏡) 解鎖：全武器普通彈丸具備穿透能力
+  quantumEye: false,   // 擊敗 BOSS 7 (戰隼) 解鎖：弱點暴擊傷害+100%
+  chronoDash: false,   // 擊敗 BOSS 8 (熔爐) 解鎖：擊殺或彈刀25%機率自發觸發2秒子彈時間
+  godslayer: false     // 擊敗 BOSS 9 (海妖) 解鎖：終極神兵覺醒 (軌道砲蓄力時間減半、霰彈+3、加特林射速+40%)
+};
+
+function updateWeaponRackUI() {
+  const rackPistol = document.getElementById('rack-pistol');
+  const rackShotgun = document.getElementById('rack-shotgun');
+  const rackShield = document.getElementById('rack-shield');
+  const rackMinigun = document.getElementById('rack-minigun');
+  const rackRailgun = document.getElementById('rack-railgun');
+
+  if (rackPistol) {
+    rackPistol.className = `rack-slot unlocked ${currentWeapon === 'PISTOL' ? 'active' : ''}`;
+  }
+  if (rackShotgun) {
+    rackShotgun.className = `rack-slot ${unlockState.shotgun ? 'unlocked' : ''} ${currentWeapon === 'SHOTGUN' ? 'active' : ''}`;
+  }
+  if (rackShield) {
+    rackShield.className = `rack-slot ${unlockState.shield ? 'unlocked' : ''} ${isShieldActive ? 'active' : ''}`;
+  }
+  if (rackMinigun) {
+    rackMinigun.className = `rack-slot ${unlockState.minigun ? 'unlocked' : ''} ${currentWeapon === 'MINIGUN' ? 'active' : ''}`;
+  }
+  if (rackRailgun) {
+    rackRailgun.className = `rack-slot ${unlockState.railgun ? 'unlocked' : ''} ${currentWeapon === 'RAILGUN' ? 'active' : ''}`;
+  }
+}
+
+function unlockSkill(key, title, desc) {
+  if (unlockState[key]) return;
+  unlockState[key] = true;
+  updateWeaponRackUI();
+  sfx.playUnlock();
+  screenShake = 20;
+  flashOverlay.style.background = 'radial-gradient(circle, rgba(255, 230, 0, 0.6) 0%, rgba(255, 120, 0, 0.25) 60%, rgba(0,0,0,0) 85%)';
+  flashOverlay.style.opacity = '1';
+  setTimeout(() => {
+    flashOverlay.style.opacity = '0';
+    flashOverlay.style.background = '#fff';
+  }, 160);
+
+  showBossBanner(`🔓 新能力解鎖：${title}！\n${desc}`, 4200);
+  spawnFloatingText(`✨ UNLOCKED: ${title}!`, canvas.width * 0.5, canvas.height * 0.45, '#ffee00');
+}
+
 // 特效實體池
 let particles = [];
 let floatingTexts = [];
@@ -1415,27 +1548,54 @@ function showBossBanner(text, duration = 3200) {
   }
 }
 
-// ⚠️ 觸發 BOSS 戰 (根據階段派發不同傳奇 BOSS)
+// ==========================================
+// 4. 十大史詩 BOSS 配置清單與進階科技樹檢測
+// ==========================================
+const BOSS_TARGET_KILLS = [12, 24, 38, 54, 72, 92, 114, 138, 164, 192];
+
+const BOSS_CONFIGS = [
+  { name: 'CYBER DREADNOUGHT (巨型巡洋母艦)', create: () => new CyberDreadnought() },
+  { name: 'SAUCER PRIME (虛空幽浮母體)', create: () => new SaucerPrime() },
+  { name: 'VOID MECHA-ARACHNID (虛空機械巨蛛)', create: () => new MechaArachnid() },
+  { name: 'GEMINI ORBITERS (雙子星軌道要塞)', create: () => new GeminiOrbiters() },
+  { name: 'OUROBOROS CELESTIAL CORE (終焉天罰星核)', create: () => new OuroborosCore() },
+  { name: 'PRISM TITAN (稜鏡光之泰坦)', create: () => new PrismTitan() },
+  { name: 'PHANTOM FALCON (幽靈戰隼匿蹤機)', create: () => new PhantomFalcon() },
+  { name: 'HELLFORGE MECH (地獄熔爐機神)', create: () => new HellforgeMech() },
+  { name: 'CYBER KRAKEN (賽博深淵海妖)', create: () => new CyberKraken() },
+  { name: 'OMNI-DEUS (創世神格·全知萬象神)', create: () => new OmniDeus() }
+];
+
+function checkTechTreeAndBoss() {
+  // 5 殺解鎖雙指霰彈槍
+  if (killCount >= 5 && !unlockState.shotgun) {
+    unlockSkill('shotgun', '雙指霰彈槍', '✌️ 比出雙指！近距離扇形轟擊！');
+  }
+
+  // 觸發對應階段傳奇 BOSS
+  if (bossPhase < BOSS_TARGET_KILLS.length) {
+    const targetKills = BOSS_TARGET_KILLS[bossPhase];
+    if (killCount >= targetKills && !bossTriggered && !currentBoss) {
+      triggerBossFight();
+    }
+  }
+}
+
+// ⚠️ 觸發 BOSS 戰 (根據階段派發 10 大傳奇 BOSS)
 function triggerBossFight() {
   bossTriggered = true;
   sfx.playBossAlert();
 
-  let bossName = '';
-  if (bossPhase === 0) bossName = 'CYBER DREADNOUGHT (巨型巡洋母艦)';
-  else if (bossPhase === 1) bossName = 'VOID MECHA-ARACHNID (虛空機械巨蛛)';
-  else bossName = 'OUROBOROS CELESTIAL CORE (終焉天罰星核)';
-
-  showBossBanner(`⚠️ WARNING: ${bossName} ⚠️`, 3200);
+  const cfg = BOSS_CONFIGS[bossPhase] || BOSS_CONFIGS[0];
+  showBossBanner(`⚠️ WARNING: BOSS ${bossPhase + 1}/10\n${cfg.name} ⚠️`, 3400);
   screenShake = 26;
 
   setTimeout(() => {
-    if (bossPhase === 0) currentBoss = new CyberDreadnought();
-    else if (bossPhase === 1) currentBoss = new MechaArachnid();
-    else currentBoss = new OuroborosCore();
+    currentBoss = cfg.create();
   }, 1200);
 }
 
-// 💥 摧毀 BOSS 史詩連鎖大核爆
+// 💥 摧毀 BOSS 史詩連鎖大核爆與科技解鎖
 function destroyBoss() {
   if (!currentBoss) return;
   const bx = currentBoss.x;
@@ -1457,32 +1617,61 @@ function destroyBoss() {
 
   // 結算與晉級下一個 BOSS 階段
   setTimeout(() => {
-    let rewardPoints = 4000;
-    let label = '';
-    if (phase === 0) {
-      rewardPoints = 4000;
-      label = '🏆 DREADNOUGHT DESTROYED! +4000';
-    } else if (phase === 1) {
-      rewardPoints = 5000;
-      label = '🏆 MECHA-ARACHNID EXTERMINATED! +5000';
-    } else {
-      rewardPoints = 7000;
-      label = '👑 OUROBOROS CORE OBLITERATED! +7000';
-    }
-
+    const rewardPoints = 4000 + phase * 800;
     score += rewardPoints;
     scoreElem.innerText = score;
-    spawnFloatingText(label, canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
+    spawnFloatingText(`🏆 BOSS ${phase + 1} DEFEATED! +${rewardPoints}`, canvas.width * 0.5, canvas.height * 0.35, '#ffdd00');
 
     // 空投 3 個金色晶片
     spawnPerkDrop();
     spawnPerkDrop();
     spawnPerkDrop();
 
-    // 晉級下一個 BOSS 階段
-    bossPhase = (bossPhase + 1) % 3;
+    // 依階段晉階解鎖神兵與終極被動科技
+    if (phase === 0) {
+      unlockSkill('shield', '全息蜂巢護盾', '✋ 張開五指即可召喚高能護盾抵擋一切傷害！');
+    } else if (phase === 1) {
+      unlockSkill('minigun', '加特林暴風掃射', '🌪️ 開火後按住拇指不放，每秒12發極速暴風壓制！');
+    } else if (phase === 2) {
+      unlockSkill('railgun', '高能離子軌道砲', '⚡ 拇指立起蓄力1秒聚能，扣下扳機貫穿全場！');
+    } else if (phase === 3) {
+      unlockSkill('overdrive', '超載核心驅動', '⚡ 被動：全武器射速提升25%，護盾回充速度翻倍！');
+    } else if (phase === 4) {
+      unlockSkill('plasmaParry', '等離子逆刃', '⚔️ 被動：完美彈反傷害提升至35，並反彈3枚等離子爆彈！');
+    } else if (phase === 5) {
+      unlockSkill('pierceBullets', '高斯穿透彈', '✨ 被動：手槍與霰彈獲得永久穿透能力！');
+    } else if (phase === 6) {
+      unlockSkill('quantumEye', '量子弱點之眼', '👁️ 被動：鎖定弱點暴擊傷害提升 100%！');
+    } else if (phase === 7) {
+      unlockSkill('chronoDash', '時空折躍', '⏱️ 被動：擊殺或彈刀25%機率自發觸發2秒時空減速！');
+    } else if (phase === 8) {
+      unlockSkill('godslayer', '弒神者覺醒', '👑 終極神兵：軌道砲蓄力時間減半、霰彈+3枚、加特林射速再+40%！');
+    } else if (phase === 9) {
+      triggerGameVictory();
+      return;
+    }
+
+    bossPhase = phase + 1;
     bossTriggered = false; // 解鎖下一場 BOSS 戰
   }, 1600);
+}
+
+function triggerGameVictory() {
+  isGameOver = true;
+  sfx.stopBgm();
+  sfx.playUnlock();
+  screenShake = 30;
+  const victoryModal = document.getElementById('victory-modal');
+  const victoryStats = document.getElementById('victory-stats');
+  if (victoryStats) {
+    victoryStats.innerText = `FINAL SCORE: ${score} · TOTAL KILLS: ${killCount} · BOSSES SLAIN: 10/10`;
+  }
+  if (victoryModal) {
+    victoryModal.style.display = 'flex';
+  } else {
+    gameOverStats.innerText = `🏆 GALAXY LIBERATOR VICTORY! 🏆\nFINAL SCORE: ${score} · KILLS: ${killCount}`;
+    gameOverModal.style.display = 'flex';
+  }
 }
 
 class EnemyBullet {
@@ -1516,7 +1705,8 @@ class EnemyBullet {
       for (let i = enemies.length - 1; i >= 0; i--) {
         const e = enemies[i];
         if (Math.hypot(this.x - e.x, this.y - e.y) < e.radius + this.radius) {
-          e.hp -= 22; // 彈反致命傷害
+          const dmg = unlockState.plasmaParry ? 45 : 22;
+          e.hp -= dmg; // 彈反致命傷害
           sfx.playExplosion();
           spawnExplosion(this.x, this.y, '#ffee00');
           this.isDead = true;
@@ -1525,7 +1715,12 @@ class EnemyBullet {
             enemies.splice(i, 1);
             score += 800;
             killCount++;
+            checkTechTreeAndBoss();
             scoreElem.innerText = score;
+            if (unlockState.chronoDash && Math.random() < 0.25) {
+              activePerks.bulletTimeTimer = Math.max(activePerks.bulletTimeTimer, 2.0);
+              spawnFloatingText('⏱️ CHRONO DASH!', canvas.width * 0.5, canvas.height * 0.5, '#00ff88');
+            }
           }
           return;
         }
@@ -1533,13 +1728,15 @@ class EnemyBullet {
 
       // 檢測撞擊傳奇 BOSS
       if (currentBoss && currentBoss.y > 0) {
-        if (Math.hypot(this.x - currentBoss.x, this.y - currentBoss.y) < 70) {
+        const hitLimit = currentBoss.radius ? currentBoss.radius + 35 : 70;
+        if (Math.hypot(this.x - currentBoss.x, this.y - currentBoss.y) < hitLimit) {
           const hitBx = currentBoss.x;
           const hitBy = currentBoss.y;
-          currentBoss.onHit(this.x, this.y, 16); // 彈反穿甲重創 BOSS！
+          const dmg = unlockState.plasmaParry ? 35 : 16;
+          currentBoss.onHit(this.x, this.y, dmg); // 彈反穿甲重創 BOSS！
           sfx.playExplosion();
           spawnExplosion(this.x, this.y, '#ffee00');
-          spawnFloatingText('⚡ PARRY COUNTER! -16', hitBx, hitBy, '#ffea00');
+          spawnFloatingText(`⚡ PARRY COUNTER! -${dmg}`, hitBx, hitBy, '#ffea00');
           this.isDead = true;
           return;
         }
@@ -2504,6 +2701,1115 @@ class OuroborosCore {
   }
 }
 
+// ==========================================
+// 🌟 BOSS 2: 虛空幽浮母體 (Saucer Prime)
+// 一階：等離子旋轉光環 ➔ 二階：超時空躍遷幻影突襲
+// ==========================================
+class SaucerPrime {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -120;
+    this.targetY = 130;
+    this.radius = 48;
+    this.angle = 0;
+    this.shootTimer = 0;
+    this.teleportTimer = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 30;
+    this.phase1MaxHp = 30;
+    this.phase2Hp = 48;
+    this.phase2MaxHp = 48;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.5;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ SAUCER PRIME: HYPER-WARP OVERDRIVE!! ⚠️', 3200);
+    spawnFloatingText('⚡ PHASE 2: HYPER-WARP ACTIVATED!!', this.x, this.y, '#ff00ea');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 120, this.y + (Math.random() - 0.5) * 40, '#ff00aa', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.angle += 0.03 * timeScale;
+    this.shootTimer += dt * timeScale;
+
+    if (this.currentPhase === 1) {
+      this.x = canvas.width * 0.5 + Math.sin(this.angle * 0.7) * (canvas.width * 0.32);
+      if (this.shootTimer > 2.2) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        const baseAng = Math.atan2(canvas.height * 0.8 - this.y, (canvas.width * 0.5) - this.x);
+        for (let offset of [-0.22, 0, 0.22]) {
+          if (enemyBullets.length < 18) {
+            const tx = this.x + Math.cos(baseAng + offset) * 300;
+            const ty = this.y + Math.sin(baseAng + offset) * 300;
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 10, tx, ty, 2.5, '#00f0ff', 13));
+          }
+        }
+      }
+    } else {
+      this.teleportTimer += dt * timeScale;
+      if (this.teleportTimer > 2.8) {
+        this.teleportTimer = 0;
+        spawnExplosion(this.x, this.y, '#00ffff', 10);
+        this.x = canvas.width * 0.18 + Math.random() * (canvas.width * 0.64);
+        this.y = 90 + Math.random() * 80;
+        sfx.playNoisePunch(0.12, 0.4);
+        spawnExplosion(this.x, this.y, '#ff00ea', 10);
+        screenShake = 10;
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(a) * 200, this.y + Math.sin(a) * 200, 2.8, '#ff00ea', 12));
+          }
+        }
+      }
+      if (this.shootTimer > 1.6) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        if (enemyBullets.length < 18) {
+          enemyBullets.push(new EnemyBullet(this.x, this.y + 15, canvas.width * 0.5, canvas.height * 0.75, 3.4, '#ffee00', 14));
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    ctx.fillStyle = this.currentPhase === 1 ? '#0d1b2a' : '#2b0938';
+    ctx.strokeStyle = this.currentPhase === 1 ? '#00f0ff' : '#ff00c8';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, this.radius * 1.3, this.radius * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    const nodeCount = 6;
+    for (let i = 0; i < nodeCount; i++) {
+      const a = this.angle * 2 + (i * Math.PI * 2 / nodeCount);
+      const nx = Math.cos(a) * (this.radius * 1.05);
+      const ny = Math.sin(a) * (this.radius * 0.35);
+      ctx.fillStyle = (i % 2 === 0) ? '#ffea00' : (this.currentPhase === 1 ? '#00f0ff' : '#ff0077');
+      ctx.beginPath();
+      ctx.arc(nx, ny, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = this.currentPhase === 1 ? 'rgba(0, 240, 255, 0.45)' : 'rgba(255, 0, 100, 0.55)';
+    ctx.beginPath();
+    ctx.arc(0, -8, this.radius * 0.5, Math.PI, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    const pulse = Math.sin(Date.now() * 0.008) * 4;
+    ctx.fillStyle = this.currentPhase === 1 ? '#00ffff' : '#ff00ea';
+    ctx.beginPath();
+    ctx.arc(0, -6, 7 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 45, barW, barH);
+    ctx.fillStyle = this.currentPhase === 1 ? '#00f0ff' : '#ff00ea';
+    ctx.fillRect(this.x - barW / 2, this.y - 45, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 45, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, this.currentPhase === 1 ? '#00ffff' : '#ff00ea', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00ffff');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ff00ea');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 4: 雙子星軌道巡航要塞 (Gemini Orbiters)
+// 一階：雙星共軌高壓電鏈 ➔ 二階：超新星殘核狂暴狂轟
+// ==========================================
+class GeminiOrbiters {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -110;
+    this.targetY = 135;
+    this.orbitRadius = 65;
+    this.angle = 0;
+    this.shootTimer = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 36;
+    this.phase1MaxHp = 36;
+    this.phase2Hp = 52;
+    this.phase2MaxHp = 52;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    this.orbitRadius = 0;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ GEMINI COLLAPSE: CRIMSON SUPERNOVA!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: CRIMSON SINGULARITY!!', this.x, this.y, '#ff3300');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 130, this.y + (Math.random() - 0.5) * 60, '#ff3300', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.angle += (this.currentPhase === 1 ? 0.038 : 0.06) * timeScale;
+    this.x = canvas.width * 0.5 + Math.sin(this.angle * 0.5) * (canvas.width * 0.25);
+    this.shootTimer += dt * timeScale;
+
+    if (this.currentPhase === 1) {
+      if (this.shootTimer > 2.0) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        const p1x = this.x + Math.cos(this.angle) * this.orbitRadius;
+        const p1y = this.y + Math.sin(this.angle) * this.orbitRadius * 0.5;
+        const p2x = this.x - Math.cos(this.angle) * this.orbitRadius;
+        const p2y = this.y - Math.sin(this.angle) * this.orbitRadius * 0.5;
+        if (enemyBullets.length < 18) {
+          enemyBullets.push(new EnemyBullet(p1x, p1y, canvas.width * 0.35, canvas.height * 0.75, 2.6, '#00ffff', 13));
+          enemyBullets.push(new EnemyBullet(p2x, p2y, canvas.width * 0.65, canvas.height * 0.75, 2.6, '#ff00aa', 13));
+        }
+      }
+    } else {
+      if (this.shootTimer > 1.4) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        for (let ang of [-0.35, -0.12, 0.12, 0.35]) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.tan(ang) * 400, canvas.height * 0.75, 3.2, '#ff3300', 13));
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    if (this.currentPhase === 1) {
+      const p1x = this.x + Math.cos(this.angle) * this.orbitRadius;
+      const p1y = this.y + Math.sin(this.angle) * this.orbitRadius * 0.5;
+      const p2x = this.x - Math.cos(this.angle) * this.orbitRadius;
+      const p2y = this.y - Math.sin(this.angle) * this.orbitRadius * 0.5;
+
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.8)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(p1x, p1y);
+      ctx.lineTo(p2x, p2y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#081e36';
+      ctx.strokeStyle = '#00f0ff';
+      ctx.beginPath();
+      ctx.arc(p1x, p1y, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#00ffff';
+      ctx.beginPath();
+      ctx.arc(p1x, p1y, 9, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#2d0a33';
+      ctx.strokeStyle = '#ff00aa';
+      ctx.beginPath();
+      ctx.arc(p2x, p2y, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#ff00aa';
+      ctx.beginPath();
+      ctx.arc(p2x, p2y, 9, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.translate(this.x, this.y);
+      ctx.fillStyle = '#240008';
+      ctx.strokeStyle = '#ff3300';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, 36, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      for (let i = 0; i < 4; i++) {
+        const a = this.angle * 2 + (i * Math.PI / 2);
+        ctx.strokeStyle = '#ffaa00';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * 36, Math.sin(a) * 36);
+        ctx.lineTo(Math.cos(a) * 58, Math.sin(a) * 58);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#ff3300';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 48, barW, barH);
+    ctx.fillStyle = this.currentPhase === 1 ? '#00f0ff' : '#ff3300';
+    ctx.fillRect(this.x - barW / 2, this.y - 48, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 48, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    let hit = false;
+    if (this.currentPhase === 1) {
+      const p1x = this.x + Math.cos(this.angle) * this.orbitRadius;
+      const p1y = this.y + Math.sin(this.angle) * this.orbitRadius * 0.5;
+      const p2x = this.x - Math.cos(this.angle) * this.orbitRadius;
+      const p2y = this.y - Math.sin(this.angle) * this.orbitRadius * 0.5;
+      if (Math.hypot(tx - p1x, ty - p1y) < 32 || Math.hypot(tx - p2x, ty - p2y) < 32) {
+        hit = true;
+      }
+    } else {
+      if (Math.hypot(tx - this.x, ty - this.y) < 45) {
+        hit = true;
+      }
+    }
+
+    if (hit) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, this.currentPhase === 1 ? '#00f0ff' : '#ff3300', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00f0ff');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ff3300');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 6: 稜鏡光之泰坦 (Prism Titan)
+// 一階：晶稜折射護甲 ➔ 二階：極光萬花筒晶體裂解
+// ==========================================
+class PrismTitan {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -130;
+    this.targetY = 135;
+    this.radius = 42;
+    this.rot = 0;
+    this.shootTimer = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 42;
+    this.phase1MaxHp = 42;
+    this.phase2Hp = 62;
+    this.phase2MaxHp = 62;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ PRISM TITAN: KALEIDOSCOPIC PRISM BURST!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: CHROMATIC ABERRATION!!', this.x, this.y, '#00ffff');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 120, this.y + (Math.random() - 0.5) * 60, '#00ffea', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.rot += 0.03 * timeScale;
+    this.x = canvas.width * 0.5 + Math.sin(this.rot * 0.6) * (canvas.width * 0.28);
+    this.shootTimer += dt * timeScale;
+
+    if (this.currentPhase === 1) {
+      if (this.shootTimer > 2.4) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        for (let i = 0; i < 3; i++) {
+          if (enemyBullets.length < 18) {
+            const spread = (i - 1) * 80;
+            enemyBullets.push(new EnemyBullet(this.x + spread, this.y + 20, canvas.width * 0.5 + spread * 1.5, canvas.height * 0.75, 2.6, '#00e5ff', 13));
+          }
+        }
+      }
+    } else {
+      if (this.shootTimer > 1.6) {
+        this.shootTimer = 0;
+        sfx.playBossLaser();
+        const colors = ['#ff0055', '#00ffcc', '#ffee00', '#ff00ff'];
+        for (let i = 0; i < 4; i++) {
+          if (enemyBullets.length < 18) {
+            const ang = (i * Math.PI / 2) + this.rot;
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(ang) * 300, this.y + Math.sin(ang) * 300, 2.9, colors[i], 12));
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rot);
+
+    const sides = 6;
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = (i * Math.PI * 2 / sides);
+      const r = (i % 2 === 0) ? this.radius * 1.2 : this.radius * 0.8;
+      const px = Math.cos(a) * r;
+      const py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = this.currentPhase === 1 ? 'rgba(0, 220, 255, 0.25)' : 'rgba(255, 0, 180, 0.35)';
+    ctx.fill();
+    ctx.strokeStyle = this.currentPhase === 1 ? '#00f0ff' : '#ff00aa';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.rotate(-this.rot * 2);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -this.radius * 0.6);
+    ctx.lineTo(this.radius * 0.6, 0);
+    ctx.lineTo(0, this.radius * 0.6);
+    ctx.lineTo(-this.radius * 0.6, 0);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(0, 0, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 48, barW, barH);
+    ctx.fillStyle = this.currentPhase === 1 ? '#00f0ff' : '#ff00aa';
+    ctx.fillRect(this.x - barW / 2, this.y - 48, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 48, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, this.currentPhase === 1 ? '#00ffff' : '#ff00aa', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00ffff');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ff00aa');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 7: 幽靈戰隼匿蹤機 (Phantom Falcon)
+// 一階：超音速俯衝掃射 ➔ 二階：光學迷彩幽靈殘像
+// ==========================================
+class PhantomFalcon {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -110;
+    this.targetY = 120;
+    this.radius = 45;
+    this.vx = 2.8;
+    this.shootTimer = 0;
+    this.cloakTimer = 0;
+    this.isCloaked = false;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 48;
+    this.phase1MaxHp = 48;
+    this.phase2Hp = 70;
+    this.phase2MaxHp = 70;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    this.vx = 4.2;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ PHANTOM FALCON: MACH-5 OVERDRIVE!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: HYPERSONIC CLOAKING!!', this.x, this.y, '#00ff88');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 120, this.y + (Math.random() - 0.5) * 50, '#00ff88', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.x += this.vx * timeScale;
+    if (this.x < canvas.width * 0.15) {
+      this.x = canvas.width * 0.15;
+      this.vx = Math.abs(this.vx);
+    } else if (this.x > canvas.width * 0.85) {
+      this.x = canvas.width * 0.85;
+      this.vx = -Math.abs(this.vx);
+    }
+
+    this.shootTimer += dt * timeScale;
+    this.cloakTimer += dt * timeScale;
+
+    if (this.currentPhase === 2 && this.cloakTimer > 3.0) {
+      this.isCloaked = !this.isCloaked;
+      this.cloakTimer = 0;
+      if (this.isCloaked) {
+        spawnFloatingText('👻 CLOAKED', this.x, this.y, '#55ff99');
+      }
+    }
+
+    if (this.shootTimer > (this.currentPhase === 1 ? 2.2 : 1.4)) {
+      this.shootTimer = 0;
+      sfx.playBossLaser();
+      if (enemyBullets.length < 18) {
+        enemyBullets.push(new EnemyBullet(this.x - 25, this.y + 15, this.x - 40, canvas.height * 0.75, 3.2, '#00ff88', 12));
+        enemyBullets.push(new EnemyBullet(this.x + 25, this.y + 15, this.x + 40, canvas.height * 0.75, 3.2, '#00ff88', 12));
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    if (this.isCloaked) {
+      ctx.globalAlpha = 0.28;
+    }
+
+    ctx.fillStyle = '#0a1926';
+    ctx.strokeStyle = this.currentPhase === 1 ? '#00ff88' : '#39ff14';
+    ctx.lineWidth = 2.5;
+
+    ctx.beginPath();
+    ctx.moveTo(0, 32);
+    ctx.lineTo(24, 0);
+    ctx.lineTo(60, -18);
+    ctx.lineTo(40, -32);
+    ctx.lineTo(15, -22);
+    ctx.lineTo(0, -18);
+    ctx.lineTo(-15, -22);
+    ctx.lineTo(-40, -32);
+    ctx.lineTo(-60, -18);
+    ctx.lineTo(-24, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#00f0ff';
+    ctx.beginPath();
+    ctx.arc(-10, -22, 4 + Math.random() * 3, 0, Math.PI * 2);
+    ctx.arc(10, -22, 4 + Math.random() * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffee00';
+    ctx.beginPath();
+    ctx.arc(0, 10, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 45, barW, barH);
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(this.x - barW / 2, this.y - 45, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 45, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (this.isCloaked) damage = Math.ceil(damage * 0.5);
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, '#00ff88', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00ff88');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00ff88');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 8: 地獄熔爐機神 (Hellforge Mech)
+// 一階：熔岩重砲格林 ➔ 二階：熔爐核心大噴發
+// ==========================================
+class HellforgeMech {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -140;
+    this.targetY = 135;
+    this.radius = 50;
+    this.shootTimer = 0;
+    this.armAngle = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 56;
+    this.phase1MaxHp = 56;
+    this.phase2Hp = 82;
+    this.phase2MaxHp = 82;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ HELLFORGE: VOLCANIC CORE MELTDOWN!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: MAGMA ERUPTION!!', this.x, this.y, '#ff3b30');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 140, this.y + (Math.random() - 0.5) * 60, '#ff3b30', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.armAngle += 0.04 * timeScale;
+    this.x = canvas.width * 0.5 + Math.sin(this.armAngle * 0.5) * (canvas.width * 0.22);
+    this.shootTimer += dt * timeScale;
+
+    if (this.shootTimer > (this.currentPhase === 1 ? 2.4 : 1.5)) {
+      this.shootTimer = 0;
+      sfx.playBossLaser();
+      if (this.currentPhase === 1) {
+        if (enemyBullets.length < 18) {
+          enemyBullets.push(new EnemyBullet(this.x - 40, this.y + 25, canvas.width * 0.4, canvas.height * 0.75, 2.6, '#ff5500', 14));
+          enemyBullets.push(new EnemyBullet(this.x + 40, this.y + 25, canvas.width * 0.6, canvas.height * 0.75, 2.6, '#ff5500', 14));
+        }
+      } else {
+        for (let offset of [-0.28, 0, 0.28]) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 20, canvas.width * 0.5 + offset * 600, canvas.height * 0.75, 3.2, '#ff1100', 14));
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    ctx.fillStyle = '#220b08';
+    ctx.strokeStyle = this.currentPhase === 1 ? '#ff5500' : '#ff0033';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-35, -35);
+    ctx.lineTo(35, -35);
+    ctx.lineTo(45, 10);
+    ctx.lineTo(20, 35);
+    ctx.lineTo(-20, 35);
+    ctx.lineTo(-45, 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#3a110a';
+    ctx.fillRect(-65, -20, 25, 38);
+    ctx.strokeRect(-65, -20, 25, 38);
+    ctx.fillRect(40, -20, 25, 38);
+    ctx.strokeRect(40, -20, 25, 38);
+
+    const pulse = Math.sin(Date.now() * 0.01) * 3;
+    ctx.fillStyle = '#ffaa00';
+    ctx.beginPath();
+    ctx.arc(0, 0, 15 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#220b08';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-12, -8); ctx.lineTo(-12, 8);
+    ctx.moveTo(0, -12); ctx.lineTo(0, 12);
+    ctx.moveTo(12, -8); ctx.lineTo(12, 8);
+    ctx.stroke();
+
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 50, barW, barH);
+    ctx.fillStyle = this.currentPhase === 1 ? '#ff5500' : '#ff0033';
+    ctx.fillRect(this.x - barW / 2, this.y - 50, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 50, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, '#ff5500', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ff5500');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ff0033');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 9: 賽博深淵海妖 (Cyber Kraken)
+// 一階：奈米觸鬚群舞 ➔ 二階：深淵黑洞異界吞噬
+// ==========================================
+class CyberKraken {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -130;
+    this.targetY = 130;
+    this.radius = 48;
+    this.tentacleTime = 0;
+    this.shootTimer = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 62;
+    this.phase1MaxHp = 62;
+    this.phase2Hp = 90;
+    this.phase2MaxHp = 90;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.6;
+    sfx.playBossTransform();
+    screenShake = 24;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 100);
+    showBossBanner('⚠️ CYBER KRAKEN: ABYSSAL VOID SINGULARITY!! ⚠️', 3500);
+    spawnFloatingText('⚡ PHASE 2: ABYSSAL VOID OPENED!!', this.x, this.y, '#9d00ff');
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 140, this.y + (Math.random() - 0.5) * 60, '#9d00ff', 8);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.tentacleTime += 0.05 * timeScale;
+    this.x = canvas.width * 0.5 + Math.sin(this.tentacleTime * 0.4) * (canvas.width * 0.24);
+    this.shootTimer += dt * timeScale;
+
+    if (this.shootTimer > (this.currentPhase === 1 ? 2.3 : 1.5)) {
+      this.shootTimer = 0;
+      sfx.playBossLaser();
+      if (this.currentPhase === 1) {
+        for (let i = -1; i <= 1; i++) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x + i * 35, this.y + 35, canvas.width * 0.5 + i * 150, canvas.height * 0.75, 2.7, '#a855f7', 13));
+          }
+        }
+      } else {
+        for (let i = -2; i <= 2; i++) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x + i * 20, this.y + 40, canvas.width * 0.5 + i * 120, canvas.height * 0.75, 3.2, '#c084fc', 13));
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    ctx.strokeStyle = this.currentPhase === 1 ? '#a855f7' : '#e879f9';
+    ctx.lineWidth = 3.5;
+    for (let t = -2; t <= 2; t++) {
+      if (t === 0) continue;
+      ctx.beginPath();
+      const startX = t * 14;
+      ctx.moveTo(startX, 10);
+      for (let s = 1; s <= 4; s++) {
+        const segY = 10 + s * 14;
+        const wave = Math.sin(this.tentacleTime * 2 + s * 0.8 + t) * 16;
+        ctx.lineTo(startX + wave, segY);
+      }
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#1e0b2e';
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, -10, 32, Math.PI, 0);
+    ctx.lineTo(24, 15);
+    ctx.lineTo(-24, 15);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#00f0ff';
+    ctx.beginPath();
+    ctx.arc(-12, 0, 4.5, 0, Math.PI * 2);
+    ctx.arc(0, -6, 5.5, 0, Math.PI * 2);
+    ctx.arc(12, 0, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 120;
+    const barH = 7;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 52, barW, barH);
+    ctx.fillStyle = '#a855f7';
+    ctx.fillRect(this.x - barW / 2, this.y - 52, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 52, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, '#a855f7', 5);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#a855f7');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#c084fc');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
+// ==========================================
+// 🌟 BOSS 10: 創世神格·全知萬象神 (Omni-Deus)
+// 一階：神聖幾何光輪 ➔ 二階：六翼熾天使全域制裁
+// ==========================================
+class OmniDeus {
+  constructor() {
+    this.x = canvas.width * 0.5;
+    this.y = -150;
+    this.targetY = 135;
+    this.radius = 52;
+    this.haloAngle = 0;
+    this.shootTimer = 0;
+    this.currentPhase = 1;
+    this.isTransforming = false;
+    this.transformTimer = 0;
+    this.phase1Hp = 80;
+    this.phase1MaxHp = 80;
+    this.phase2Hp = 120;
+    this.phase2MaxHp = 120;
+  }
+
+  triggerPhase2() {
+    this.currentPhase = 2;
+    this.isTransforming = true;
+    this.transformTimer = 1.8;
+    sfx.playBossTransform();
+    screenShake = 28;
+    flashOverlay.style.opacity = '1';
+    setTimeout(() => { flashOverlay.style.opacity = '0'; }, 120);
+    showBossBanner('👑 FINAL JUDGMENT: OMNI-DEUS GENESIS REBIRTH!! 👑', 4000);
+    spawnFloatingText('👑 FINAL ASCENSION: SERAPHIM OF LIGHT!!', this.x, this.y, '#ffee00');
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        spawnExplosion(this.x + (Math.random() - 0.5) * 160, this.y + (Math.random() - 0.5) * 80, '#ffee00', 10);
+      }, i * 160);
+    }
+  }
+
+  update(dt, timeScale) {
+    if (this.isTransforming) {
+      this.transformTimer -= dt * timeScale;
+      if (this.transformTimer <= 0) this.isTransforming = false;
+      return;
+    }
+    if (this.y < this.targetY) {
+      this.y += (this.targetY - this.y) * 0.04 * timeScale + 0.6;
+      return;
+    }
+
+    this.haloAngle += 0.035 * timeScale;
+    this.x = canvas.width * 0.5 + Math.sin(this.haloAngle * 0.4) * (canvas.width * 0.22);
+    this.shootTimer += dt * timeScale;
+
+    if (this.shootTimer > (this.currentPhase === 1 ? 2.1 : 1.3)) {
+      this.shootTimer = 0;
+      sfx.playBossLaser();
+      if (this.currentPhase === 1) {
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 3) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.cos(a) * 300, this.y + Math.sin(a) * 300, 2.7, '#ffee00', 13));
+          }
+        }
+      } else {
+        for (let ang of [-0.36, -0.18, 0, 0.18, 0.36]) {
+          if (enemyBullets.length < 18) {
+            enemyBullets.push(new EnemyBullet(this.x, this.y, this.x + Math.sin(ang) * 450, canvas.height * 0.75, 3.4, '#00ffff', 14));
+          }
+        }
+      }
+    }
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    if (this.currentPhase === 2) {
+      ctx.strokeStyle = 'rgba(255, 238, 0, 0.65)';
+      ctx.lineWidth = 2.5;
+      for (let w = -1; w <= 1; w += 2) {
+        ctx.beginPath();
+        ctx.moveTo(w * 15, 0);
+        ctx.quadraticCurveTo(w * 80, -40, w * 95, -10);
+        ctx.quadraticCurveTo(w * 50, 15, w * 15, 10);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(w * 15, 5);
+        ctx.quadraticCurveTo(w * 75, 10, w * 85, 35);
+        ctx.quadraticCurveTo(w * 40, 30, w * 15, 15);
+        ctx.stroke();
+      }
+    }
+
+    ctx.rotate(this.haloAngle);
+    ctx.strokeStyle = '#ffee00';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-this.radius * 0.7, -this.radius * 0.7, this.radius * 1.4, this.radius * 1.4);
+
+    ctx.rotate(-this.haloAngle * 2);
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius * 0.85, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.rotate(this.haloAngle);
+    ctx.fillStyle = '#101026';
+    ctx.strokeStyle = '#ffee00';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, -this.radius * 0.5);
+    ctx.lineTo(this.radius * 0.5, this.radius * 0.35);
+    ctx.lineTo(-this.radius * 0.5, this.radius * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#00ffff';
+    ctx.beginPath();
+    ctx.arc(0, 0, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
+    const barW = 130;
+    const barH = 8;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(this.x - barW / 2, this.y - 56, barW, barH);
+    ctx.fillStyle = this.currentPhase === 1 ? '#ffee00' : '#00ffff';
+    ctx.fillRect(this.x - barW / 2, this.y - 56, barW * Math.max(0, hpPct), barH);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.x - barW / 2, this.y - 56, barW, barH);
+  }
+
+  onHit(tx, ty, damage) {
+    if (this.isTransforming) return false;
+    if (Math.hypot(tx - this.x, ty - this.y) < this.radius + 15) {
+      if (unlockState.quantumEye) damage *= 2;
+      sfx.playHitSound();
+      spawnExplosion(tx, ty, this.currentPhase === 1 ? '#ffee00' : '#00ffff', 6);
+      if (this.currentPhase === 1) {
+        this.phase1Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#ffee00');
+        if (this.phase1Hp <= 0) this.triggerPhase2();
+      } else {
+        this.phase2Hp -= damage;
+        spawnFloatingText(`-${damage}`, this.x, this.y, '#00ffff');
+        if (this.phase2Hp <= 0) destroyBoss();
+      }
+      return true;
+    }
+    return false;
+  }
+}
+
 function applyDamage(amount) {
   if (isGameOver) return;
 
@@ -2606,6 +3912,19 @@ function restartGame() {
   shieldBreakCooldown = 0;
   updateShieldUI();
 
+  // 重設科技樹與神兵解鎖
+  unlockState.shotgun = false;
+  unlockState.shield = false;
+  unlockState.minigun = false;
+  unlockState.railgun = false;
+  unlockState.overdrive = false;
+  unlockState.plasmaParry = false;
+  unlockState.pierceBullets = false;
+  unlockState.quantumEye = false;
+  unlockState.chronoDash = false;
+  unlockState.godslayer = false;
+  updateWeaponRackUI();
+
   currentWeapon = 'PISTOL';
   railgunChargeTimer = 0;
   isRailgunCharged = false;
@@ -2617,6 +3936,8 @@ function restartGame() {
   scoreElem.innerText = score;
   updateHpUI();
   gameOverModal.style.display = 'none';
+  const vicModal = document.getElementById('victory-modal');
+  if (vicModal) vicModal.style.display = 'none';
   sfx.startBgm();
 }
 
@@ -2687,9 +4008,10 @@ function executeFire(originX, originY, targetX, targetY) {
     const isMinigun = currentWeapon === 'MINIGUN';
 
     let cooldown = 170;
-    if (isMinigun) cooldown = 85;
-    else if (isShotgun) cooldown = 320;
-    else if (isRailgun) cooldown = 480;
+    if (isMinigun) cooldown = unlockState.godslayer ? 50 : (unlockState.overdrive ? 65 : 85);
+    else if (isShotgun) cooldown = unlockState.overdrive ? 240 : 320;
+    else if (isRailgun) cooldown = unlockState.overdrive ? 360 : 480;
+    else if (unlockState.overdrive) cooldown = 125;
 
     if (now - lastFireTime < cooldown) return;
     lastFireTime = now;
@@ -2759,9 +4081,11 @@ function executeFire(originX, originY, targetX, targetY) {
       color: '#ffea00'
     });
   } else if (isShotgun) {
-    // 💥 霰彈 5 連發扇形
+    // 💥 霰彈扇形齊射 (弒神者覺醒額外增加彈丸)
     const baseAngle = Math.atan2(targetY - originY, targetX - originX);
-    const spreadAngles = [-0.22, -0.11, 0, 0.11, 0.22];
+    const spreadAngles = unlockState.godslayer
+      ? [-0.30, -0.20, -0.10, 0, 0.10, 0.20, 0.30]
+      : [-0.22, -0.11, 0, 0.11, 0.22];
     const len = Math.hypot(targetX - originX, targetY - originY) || 300;
 
     for (let offset of spreadAngles) {
@@ -2804,7 +4128,8 @@ function executeFire(originX, originY, targetX, targetY) {
       }
 
       if (hit) {
-        const damage = isRailgun ? (8 + activePerks.clusterLevel * 2) : (1 + activePerks.clusterLevel);
+        let damage = isRailgun ? (8 + activePerks.clusterLevel * 2) : (1 + activePerks.clusterLevel);
+        if (unlockState.quantumEye) damage = Math.ceil(damage * 1.75);
         e.hp -= damage;
         sfx.playHitSound();
 
@@ -2822,6 +4147,12 @@ function executeFire(originX, originY, targetX, targetY) {
           }
 
           killCount++;
+          checkTechTreeAndBoss();
+          if (unlockState.chronoDash && Math.random() < 0.25) {
+            activePerks.bulletTimeTimer = Math.max(activePerks.bulletTimeTimer, 2.0);
+            spawnFloatingText('⏱️ CHRONO DASH!', canvas.width * 0.5, canvas.height * 0.5, '#00ff88');
+          }
+
           if (now - lastHitTime < 2500) combo++;
           else combo = 1;
           lastHitTime = now;
@@ -2843,15 +4174,9 @@ function executeFire(originX, originY, targetX, targetY) {
           if (killCount % 7 === 0) {
             spawnPerkDrop();
           }
-
-          // 👑 多階段 BOSS 觸發：15殺(母艦) -> 35殺(機械巨蛛) -> 60殺(終焉星核)
-          const targetKills = bossPhase === 0 ? 15 : (bossPhase === 1 ? 35 : 60);
-          if (killCount >= targetKills && !bossTriggered && !currentBoss) {
-            triggerBossFight();
-          }
         }
 
-        if (!isRailgun && activePerks.clusterLevel === 0) {
+        if (!isRailgun && activePerks.clusterLevel === 0 && !unlockState.pierceBullets) {
           break; // 若非軌道砲且無穿透，子彈被消耗
         }
       }
@@ -2883,6 +4208,15 @@ function executeFire(originX, originY, targetX, targetY) {
           b.vy = isFinite(dy / dist) ? (dy / dist) * speed : -speed;
           b.radius = 18;
 
+          // 等離子逆刃：反彈時額外散射 2 枚微型追蹤爆彈
+          if (unlockState.plasmaParry && enemyBullets.length < 18) {
+            for (let ang of [-0.25, 0.25]) {
+              const spark = new EnemyBullet(b.x, b.y, b.x + Math.sin(ang) * 200, b.y - 200, 14, '#00ffff', 12);
+              spark.isParried = true;
+              enemyBullets.push(spark);
+            }
+          }
+
           sfx.playParryClang();
           screenShake = 16;
           activePerks.bulletTimeTimer = Math.max(activePerks.bulletTimeTimer, 0.2); // 0.2s 隻狼式打鐵頓挫
@@ -2907,7 +4241,8 @@ function executeFire(originX, originY, targetX, targetY) {
 
     // 6. 攻擊傳奇 BOSS 弱點判定
     if (!pelletConsumed && currentBoss && currentBoss.y > 0) {
-      const damage = isRailgun ? (10 + activePerks.clusterLevel * 3) : (1 + activePerks.clusterLevel);
+      let damage = isRailgun ? (10 + activePerks.clusterLevel * 3) : (1 + activePerks.clusterLevel);
+      if (unlockState.quantumEye) damage = Math.ceil(damage * 1.75);
       currentBoss.onHit(isRailgun ? currentBoss.x : p.tx, isRailgun ? currentBoss.y : p.ty, damage);
     }
   }
@@ -2983,6 +4318,14 @@ function onResults(results) {
   const isOpenPalm = isIndexExt && isMiddleExt && isRingExt && isPinkyExt;
 
   if (isOpenPalm) {
+    if (!unlockState.shield) {
+      isShieldActive = false;
+      gunCrosshair.active = false;
+      statusDot.className = 'status-dot';
+      statusText.innerText = '🔒 全息蜂巢盾尚未解鎖 (擊敗 BOSS 1 巡洋母艦解鎖)';
+      updateWeaponRackUI();
+      return;
+    }
     if (shieldBreakCooldown > 0) {
       isShieldActive = false;
       gunCrosshair.active = false;
@@ -3004,6 +4347,7 @@ function onResults(results) {
       statusDot.className = 'status-dot ready';
       statusText.innerText = `🛡️ 全息蜂巢盾防禦中！(能量: ${Math.floor(shieldEnergy)}%)`;
     }
+    updateWeaponRackUI();
     return;
   } else {
     isShieldActive = false;
@@ -3041,6 +4385,14 @@ function onResults(results) {
 
     if (isMiddleStraight) {
       // 💥 模式 A：雙指霰彈槍模式
+      if (!unlockState.shotgun) {
+        currentWeapon = 'PISTOL';
+        statusDot.className = 'status-dot';
+        statusText.innerText = '🔒 雙指霰彈尚未解鎖 (累積消滅 5 名敵人解鎖)';
+        updateWeaponRackUI();
+        return;
+      }
+
       currentWeapon = 'SHOTGUN';
       sfx.stopRailgunHum();
       railgunChargeTimer = 0;
@@ -3067,11 +4419,14 @@ function onResults(results) {
         thumbDownTimer = 0;
         railgunChargeTimer += deltaHand;
 
-        if (railgunChargeTimer > 0.25) {
-          const ratio = Math.min(1.0, (railgunChargeTimer - 0.25) / 0.85);
+        const reqChargeTime = unlockState.godslayer ? 0.55 : 1.1;
+        const startChargeTime = unlockState.godslayer ? 0.15 : 0.25;
+
+        if (unlockState.railgun && railgunChargeTimer > startChargeTime) {
+          const ratio = Math.min(1.0, (railgunChargeTimer - startChargeTime) / (reqChargeTime - startChargeTime));
           sfx.startRailgunHum(ratio);
 
-          if (railgunChargeTimer >= 1.1) {
+          if (railgunChargeTimer >= reqChargeTime) {
             isRailgunCharged = true;
             currentWeapon = 'RAILGUN';
             statusDot.className = 'status-dot ready';
@@ -3086,7 +4441,7 @@ function onResults(results) {
           currentWeapon = 'PISTOL';
           isRailgunCharged = false;
           statusDot.className = 'status-dot ready';
-          statusText.innerText = '🎯 瞄準中！扣下拇指單發 / 按住不放加特林 / 立起 1 秒軌道砲蓄力';
+          statusText.innerText = '🎯 瞄準中！扣下拇指單發' + (unlockState.minigun ? ' / 按住不放加特林' : '') + (unlockState.railgun ? ' / 立起蓄力軌道砲' : '');
         }
       } else if (isThumbDown) {
         sfx.stopRailgunHum();
@@ -3111,16 +4466,21 @@ function onResults(results) {
             executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
             railgunChargeTimer = 0;
             statusDot.className = 'status-dot';
-            statusText.innerText = '🔫 FIRE!! 單發手槍 (保持按住拇指進入加特林掃射)';
+            statusText.innerText = '🔫 FIRE!! 單發手槍' + (unlockState.minigun ? ' (保持按住拇指進入加特林掃射)' : '');
           }
         } else if (canTriggerAutofire) {
           // 玩家開火後持續按住大拇指不放 -> 加特林暴風掃射！
-          thumbDownTimer += deltaHand;
-          if (thumbDownTimer > 0.20) {
-            currentWeapon = 'MINIGUN';
+          if (!unlockState.minigun) {
             statusDot.className = 'status-dot';
-            statusText.innerText = '🌪️ 加特林極速暴風連射中！！';
-            executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+            statusText.innerText = '🔒 加特林暴風掃射尚未解鎖 (擊敗 BOSS 2 幽浮母體解鎖)';
+          } else {
+            thumbDownTimer += deltaHand;
+            if (thumbDownTimer > 0.20) {
+              currentWeapon = 'MINIGUN';
+              statusDot.className = 'status-dot';
+              statusText.innerText = '🌪️ 加特林極速暴風連射中！！';
+              executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
+            }
           }
         }
       }
@@ -3138,6 +4498,7 @@ function onResults(results) {
       statusText.innerText = '請比出手指槍：單指 👉 手槍/加特林/軌道砲 / 雙指 ✌️ 霰彈';
     }
   }
+  updateWeaponRackUI();
   } catch (err) {
     console.error('onResults runtime error caught:', err);
   }
@@ -3160,7 +4521,8 @@ function gameLoop() {
       shieldBreakCooldown -= dt;
       if (shieldBreakCooldown < 0) shieldBreakCooldown = 0;
     } else {
-      shieldEnergy = Math.min(maxShieldEnergy, shieldEnergy + 30 * dt);
+      const rechargeRate = unlockState.overdrive ? 65 : 30;
+      shieldEnergy = Math.min(maxShieldEnergy, shieldEnergy + rechargeRate * dt);
     }
   }
   updateShieldUI();
@@ -3760,6 +5122,14 @@ document.getElementById('restart-btn').addEventListener('click', (e) => {
   e.stopPropagation();
   restartGame();
 });
+
+const victoryRestartBtn = document.getElementById('victory-restart-btn');
+if (victoryRestartBtn) {
+  victoryRestartBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    restartGame();
+  });
+}
 
 window.addEventListener('error', (e) => {
   console.warn('Window runtime error caught:', e.message, e.filename, e.lineno);
