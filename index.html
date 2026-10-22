@@ -41,48 +41,9 @@
       object-fit: cover;
     }
 
-    /* 槍口火光閃光層 */
-    #flash-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle, rgba(255,230,150,0.6) 0%, rgba(255,100,0,0.25) 60%, rgba(0,0,0,0) 100%);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.05s ease-out;
-      z-index: 10;
-    }
-
-    /* 受傷紅屏覆蓋層 */
-    #damage-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle, rgba(255, 0, 50, 0.1) 40%, rgba(255, 0, 0, 0.65) 100%);
-      box-shadow: inset 0 0 60px rgba(255, 0, 0, 0.8);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.1s ease-out;
-      z-index: 11;
-    }
-
-    /* 子彈時間時空扭曲覆蓋層 */
-    #bullet-time-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(circle, rgba(0, 240, 255, 0.05) 30%, rgba(0, 150, 255, 0.25) 100%);
-      box-shadow: inset 0 0 45px rgba(0, 240, 255, 0.4);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease-out;
-      z-index: 9;
+    /* 停用全螢幕 DOM 特效圖層，改由 Canvas 內部零成本渲染，徹底釋放 iPhone XR 顯存與合成層負擔 */
+    #flash-overlay, #damage-overlay, #bullet-time-overlay {
+      display: none !important;
     }
 
     /* 極簡通透懸浮 HUD (完全不遮擋頂部戰場) */
@@ -108,7 +69,7 @@
       width: 100%;
     }
 
-    /* 左側極簡卡片 (半透明微型條) */
+    /* 左側極簡卡片 (移除 backdrop-filter 避免 iOS 每幀高斯模糊重繪卡頓) */
     .left-status-group {
       display: flex;
       flex-direction: column;
@@ -119,11 +80,10 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      background: rgba(8, 12, 22, 0.6);
-      backdrop-filter: blur(6px);
+      background: rgba(8, 12, 24, 0.88);
       padding: 4px 10px;
       border-radius: 20px;
-      border: 1px solid rgba(0, 240, 255, 0.25);
+      border: 1px solid rgba(0, 240, 255, 0.3);
     }
 
     .hp-bar-bg {
@@ -137,9 +97,8 @@
     .hp-bar-fill {
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, #ff0055, #00ff88);
+      background: #00ff88;
       border-radius: 4px;
-      transition: width 0.2s ease-out;
     }
 
     .shield-bar-bg {
@@ -154,29 +113,26 @@
     .shield-bar-fill {
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, #00bfff, #00ffaa);
+      background: #00e5ff;
       border-radius: 4px;
-      transition: width 0.15s ease-out;
     }
 
     .score-display {
       font-size: 14px;
       font-weight: 900;
       color: #ffdd00;
-      text-shadow: 0 0 8px rgba(255, 221, 0, 0.8);
       letter-spacing: 0.5px;
     }
 
     .combo-badge {
       display: inline-block;
-      background: linear-gradient(135deg, #ff0055, #ff5500);
+      background: #ff3300;
       color: #fff;
       padding: 1px 6px;
       border-radius: 4px;
       font-size: 11px;
       font-weight: 900;
       transform: scale(0);
-      transition: transform 0.15s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     }
     .combo-badge.active {
       transform: scale(1);
@@ -193,25 +149,23 @@
       width: 24px;
       height: 24px;
       border-radius: 6px;
-      background: rgba(10, 16, 30, 0.7);
+      background: rgba(10, 16, 30, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 12px;
       opacity: 0.35;
-      transition: all 0.25s ease-out;
       user-select: none;
     }
     .rack-slot.unlocked {
       opacity: 0.95;
       border-color: rgba(0, 240, 255, 0.6);
-      background: rgba(0, 30, 60, 0.6);
+      background: rgba(0, 30, 60, 0.85);
     }
     .rack-slot.active {
       opacity: 1;
       border-color: #ffdd00;
-      box-shadow: 0 0 10px rgba(255, 221, 0, 0.7);
       transform: scale(1.1);
     }
     .rack-slot .lock-icon {
@@ -232,36 +186,31 @@
     }
 
     .perk-slot {
-      background: rgba(10, 16, 30, 0.7);
+      background: rgba(10, 16, 30, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: rgba(255, 255, 255, 0.4);
       padding: 2px 7px;
       border-radius: 8px;
       font-size: 11px;
       font-weight: 800;
-      backdrop-filter: blur(4px);
-      transition: all 0.25s ease-out;
     }
 
     .perk-slot.active {
       border-color: #00f0ff;
       color: #00f0ff;
-      background: rgba(0, 240, 255, 0.2);
-      box-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+      background: rgba(0, 45, 75, 0.88);
     }
 
     .perk-slot.active.chrono {
       border-color: #00ff88;
       color: #00ff88;
-      background: rgba(0, 255, 136, 0.2);
-      box-shadow: 0 0 8px rgba(0, 255, 136, 0.35);
+      background: rgba(0, 55, 35, 0.88);
     }
 
     .perk-slot.active.nano {
       border-color: #ff00aa;
       color: #ff00aa;
-      background: rgba(255, 0, 170, 0.2);
-      box-shadow: 0 0 8px rgba(255, 0, 170, 0.35);
+      background: rgba(65, 0, 45, 0.88);
     }
 
     /* 右側微型圖示按鈕 */
@@ -272,8 +221,8 @@
     }
 
     .icon-btn {
-      background: rgba(10, 15, 30, 0.65);
-      border: 1px solid rgba(0, 240, 255, 0.3);
+      background: rgba(10, 16, 32, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.35);
       color: #00f0ff;
       width: 32px;
       height: 32px;
@@ -283,8 +232,6 @@
       align-items: center;
       font-size: 14px;
       cursor: pointer;
-      backdrop-filter: blur(6px);
-      transition: all 0.15s;
     }
     .icon-btn:active {
       background: #00f0ff;
@@ -298,23 +245,19 @@
       top: 18%;
       left: 0;
       width: 100%;
-      background: linear-gradient(90deg, rgba(255,0,0,0) 0%, rgba(255,0,60,0.88) 25%, rgba(255,0,60,0.88) 75%, rgba(255,0,0,0) 100%);
+      background: rgba(200, 0, 45, 0.92);
       color: #fff;
       padding: 10px 0;
       text-align: center;
-      font-size: 17px;
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 2px;
-      box-shadow: 0 0 20px rgba(255, 0, 60, 0.7);
+      letter-spacing: 1.5px;
       z-index: 50;
-      transform: scaleY(0);
-      will-change: transform;
-      transition: transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      display: none;
       pointer-events: none;
-      text-shadow: 0 0 10px #000;
     }
     #boss-warning-banner.active {
-      transform: scaleY(1);
+      display: block;
     }
 
     /* 底部手勢狀態提示 */
@@ -323,11 +266,10 @@
       bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(8px);
+      background: rgba(6, 10, 20, 0.9);
       padding: 7px 16px;
       border-radius: 20px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.22);
       font-size: 12px;
       display: flex;
       align-items: center;
@@ -340,11 +282,9 @@
       height: 8px;
       border-radius: 50%;
       background: #ff4444;
-      box-shadow: 0 0 6px #ff4444;
     }
     .status-dot.ready {
       background: #00ff88;
-      box-shadow: 0 0 6px #00ff88;
     }
 
     /* 初始開始視窗 & Game Over 視窗 */
@@ -585,8 +525,26 @@ class SoundSynthesizer {
     this.isBulletTime = false;
     this.sharedNoiseBuffer = null;
     this.sharedExplosionBuffer = null;
+    this.activeNodes = 0; // iPhone XR 嚴格控管同時活躍音訊節點數 (<= 14)，杜絕後期音訊圖堆積卡頓
     this.lastHitSfxTime = 0;
     this.lastExpSfxTime = 0;
+    this.lastNoiseTime = 0;
+    this.lastBlockTime = 0;
+    this.lastBeepTime = 0;
+    this.lastBossLaserTime = 0;
+    this.lastMinigunTime = 0;
+  }
+
+  // 自動釋放 WebKit AudioNode 連接圖，解決 iPhone XR 玩到後期數千個死亡 GainNode/FilterNode 阻塞 CPU 的核心問題
+  _autoClean(srcNode, ...nodes) {
+    this.activeNodes++;
+    srcNode.onended = () => {
+      this.activeNodes = Math.max(0, this.activeNodes - 1);
+      try { srcNode.disconnect(); } catch (e) {}
+      for (let i = 0; i < nodes.length; i++) {
+        try { if (nodes[i]) nodes[i].disconnect(); } catch (e) {}
+      }
+    };
   }
 
   init() {
@@ -613,7 +571,7 @@ class SoundSynthesizer {
 
   // 手槍射擊音
   playLaserPistol() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 14) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -626,6 +584,7 @@ class SoundSynthesizer {
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + (this.isBulletTime ? 0.32 : 0.16));
 
@@ -634,7 +593,7 @@ class SoundSynthesizer {
 
   // 霰彈槍射擊音
   playShotgun() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 14) return;
     const now = this.ctx.currentTime;
     for (let f of [320, 160]) {
       const osc = this.ctx.createOscillator();
@@ -648,30 +607,33 @@ class SoundSynthesizer {
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(osc, gain);
       osc.start(now);
       osc.stop(now + 0.32);
     }
     this.playNoisePunch(0.2, 0.7);
   }
 
-  // 🌪️ 加特林機槍開火音效 (高射速、短促金屬脆響)
+  // 🌪️ 加特林機槍開火音效 (高射速、短促金屬脆響 + 節流保護)
   playMinigunShot() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
+    if (now - this.lastMinigunTime < 0.055) return;
+    this.lastMinigunTime = now;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(650, now);
-    osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.07);
 
-    gain.gain.setValueAtTime(0.35, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    gain.gain.setValueAtTime(0.32, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
 
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
-    osc.stop(now + 0.08);
-    this.playNoisePunch(0.04, 0.25);
+    osc.stop(now + 0.07);
   }
 
   // ⚡ 軌道砲蓄力聚能嗡鳴 (由低升至高頻)
@@ -698,6 +660,7 @@ class SoundSynthesizer {
       try {
         this.railgunOsc.stop();
         this.railgunOsc.disconnect();
+        if (this.railgunGain) this.railgunGain.disconnect();
       } catch (e) {}
       this.railgunOsc = null;
       this.railgunGain = null;
@@ -710,32 +673,35 @@ class SoundSynthesizer {
     const now = this.ctx.currentTime;
     this.stopRailgunHum();
 
-    for (let f of [550, 220, 110]) {
+    for (let f of [550, 180]) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(f, now);
-      osc.frequency.exponentialRampToValueAtTime(25, now + 0.45);
+      osc.frequency.exponentialRampToValueAtTime(25, now + 0.42);
 
       gain.gain.setValueAtTime(0.7, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(osc, gain);
       osc.start(now);
-      osc.stop(now + 0.48);
+      osc.stop(now + 0.45);
     }
-    this.playNoisePunch(0.35, 0.9);
+    this.playNoisePunch(0.32, 0.85);
   }
 
   playNoisePunch(duration, volume) {
-    if (!this.ctx || !this.sharedNoiseBuffer) return;
+    if (!this.ctx || !this.sharedNoiseBuffer || this.activeNodes > 12) return;
+    const now = this.ctx.currentTime;
+    if (now - this.lastNoiseTime < 0.055) return;
+    this.lastNoiseTime = now;
     try {
       const noise = this.ctx.createBufferSource();
       noise.buffer = this.sharedNoiseBuffer;
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      const now = this.ctx.currentTime;
       filter.frequency.setValueAtTime(1400, now);
       filter.frequency.exponentialRampToValueAtTime(90, now + duration);
 
@@ -746,31 +712,31 @@ class SoundSynthesizer {
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(noise, filter, gain);
       noise.start(now);
       noise.stop(now + duration);
-    } catch (e) {
-      // 靜音保護，杜絕行動端 Web Audio 崩潰
-    }
+    } catch (e) {}
   }
 
   // ⚡ 連環閃電電弧滋滋音效
   playTeslaSound() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(1600 + Math.random() * 800, now + i * 0.04);
-      osc.frequency.exponentialRampToValueAtTime(200, now + i * 0.04 + 0.08);
+      osc.frequency.setValueAtTime(1600 + Math.random() * 800, now + i * 0.05);
+      osc.frequency.exponentialRampToValueAtTime(200, now + i * 0.05 + 0.08);
 
-      gain.gain.setValueAtTime(0.2, now + i * 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.08);
+      gain.gain.setValueAtTime(0.2, now + i * 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.08);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
-      osc.start(now + i * 0.04);
-      osc.stop(now + i * 0.04 + 0.08);
+      this._autoClean(osc, gain);
+      osc.start(now + i * 0.05);
+      osc.stop(now + i * 0.05 + 0.08);
     }
   }
 
@@ -778,7 +744,7 @@ class SoundSynthesizer {
   playUpgradeSound() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    const freqs = [523.25, 659.25, 783.99, 1046.5];
     freqs.forEach((f, i) => {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -790,6 +756,7 @@ class SoundSynthesizer {
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(osc, gain);
       osc.start(now + i * 0.06);
       osc.stop(now + i * 0.06 + 0.18);
     });
@@ -800,27 +767,27 @@ class SoundSynthesizer {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      const notes = [440, 554.37, 659.25, 880, 1108.73]; // A4, C#5, E5, A5, C#6
+      const notes = [440, 554.37, 659.25, 880];
       notes.forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, now + idx * 0.07);
         gain.gain.setValueAtTime(0.35, now + idx * 0.07);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.32);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
+        this._autoClean(osc, gain);
         osc.start(now + idx * 0.07);
-        osc.stop(now + idx * 0.07 + 0.35);
+        osc.stop(now + idx * 0.07 + 0.32);
       });
-      this.playNoisePunch(0.12, 0.4);
     } catch (e) {}
   }
 
   playHitSound() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
-    if (now - this.lastHitSfxTime < 0.045) return; // 節流保護，避免加特林/霰彈連擊造成 iOS 音訊卡頓
+    if (now - this.lastHitSfxTime < 0.065) return; // 節流保護，避免加特林/霰彈連擊造成 iOS 音訊卡頓
     this.lastHitSfxTime = now;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -828,17 +795,18 @@ class SoundSynthesizer {
     osc.frequency.setValueAtTime(1400, now);
     osc.frequency.setValueAtTime(1900, now + 0.04);
     gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
-    osc.stop(now + 0.1);
+    osc.stop(now + 0.09);
   }
 
   playExplosion() {
-    if (!this.ctx || !this.sharedExplosionBuffer) return;
+    if (!this.ctx || !this.sharedExplosionBuffer || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
-    if (now - this.lastExpSfxTime < 0.05) return;
+    if (now - this.lastExpSfxTime < 0.075) return;
     this.lastExpSfxTime = now;
     try {
       const noise = this.ctx.createBufferSource();
@@ -846,17 +814,18 @@ class SoundSynthesizer {
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(500, now);
-      filter.frequency.exponentialRampToValueAtTime(60, now + 0.32);
+      filter.frequency.exponentialRampToValueAtTime(60, now + 0.30);
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.75, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      gain.gain.setValueAtTime(0.7, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
 
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(noise, filter, gain);
       noise.start(now);
-      noise.stop(now + 0.35);
+      noise.stop(now + 0.32);
     } catch (e) {}
   }
 
@@ -872,14 +841,17 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + 0.28);
     this.playNoisePunch(0.18, 0.6);
   }
 
   playAlertBeep() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
+    if (now - this.lastBeepTime < 0.09) return;
+    this.lastBeepTime = now;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'square';
@@ -888,30 +860,34 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + 0.06);
   }
 
-  // 🛡️ 護盾/無敵彈刀金屬嗡鳴音效
+  // 🛡️ 護盾/無敵彈刀金屬嗡鳴音效 (加入節流，防止霰彈 7 發同時打在護盾上瞬間塞爆音效執行緒)
   playShieldBlock() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
+    if (now - this.lastBlockTime < 0.08) return;
+    this.lastBlockTime = now;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(850, now);
     osc.frequency.exponentialRampToValueAtTime(1450, now + 0.08);
     gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
-    osc.stop(now + 0.12);
+    osc.stop(now + 0.11);
   }
 
   // 🛡️ 展開全息護盾音效
   playShieldDeploy() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -922,13 +898,14 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + 0.18);
   }
 
   // 🛡️ 護盾吸收抵擋攻擊音效
   playShieldAbsorb() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
@@ -939,9 +916,9 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + 0.2);
-    this.playNoisePunch(0.06, 0.35);
   }
 
   // 💥 護盾過熱崩潰音效
@@ -957,6 +934,7 @@ class SoundSynthesizer {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
     osc.stop(now + 0.38);
     this.playNoisePunch(0.2, 0.75);
@@ -967,57 +945,54 @@ class SoundSynthesizer {
     if (!this.ctx) return;
     try {
       const now = this.ctx.currentTime;
-      for (let f of [2400, 1600, 880]) {
+      for (let f of [2200, 1100]) {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(f, now);
-        osc.frequency.exponentialRampToValueAtTime(200, now + 0.25);
-        gain.gain.setValueAtTime(0.6, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.22);
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
+        this._autoClean(osc, gain);
         osc.start(now);
-        osc.stop(now + 0.28);
+        osc.stop(now + 0.25);
       }
-      this.playNoisePunch(0.05, 0.4);
-    } catch (e) {
-      // 靜音保護
-    }
+    } catch (e) {}
   }
 
   // ⚡ BOSS 二階段狂暴變身史詩咆哮音效
   playBossTransform() {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    // 重低音下沉衝擊波
     const osc1 = this.ctx.createOscillator();
     const gain1 = this.ctx.createGain();
     osc1.type = 'sawtooth';
     osc1.frequency.setValueAtTime(260, now);
-    osc1.frequency.exponentialRampToValueAtTime(28, now + 0.7);
-    gain1.gain.setValueAtTime(0.7, now);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+    osc1.frequency.exponentialRampToValueAtTime(28, now + 0.65);
+    gain1.gain.setValueAtTime(0.65, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
     osc1.connect(gain1);
     gain1.connect(this.ctx.destination);
+    this._autoClean(osc1, gain1);
     osc1.start(now);
-    osc1.stop(now + 0.75);
+    osc1.stop(now + 0.7);
 
-    // 三重科技狂暴警報音
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'square';
-      osc.frequency.setValueAtTime(620 + (i % 2) * 280, now + i * 0.18);
-      osc.frequency.exponentialRampToValueAtTime(160, now + i * 0.18 + 0.16);
-      gain.gain.setValueAtTime(0.35, now + i * 0.18);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.18 + 0.16);
+      osc.frequency.setValueAtTime(620 + (i % 2) * 280, now + i * 0.2);
+      osc.frequency.exponentialRampToValueAtTime(160, now + i * 0.2 + 0.16);
+      gain.gain.setValueAtTime(0.32, now + i * 0.2);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.2 + 0.16);
       osc.connect(gain);
       gain.connect(this.ctx.destination);
-      osc.start(now + i * 0.18);
-      osc.stop(now + i * 0.18 + 0.16);
+      this._autoClean(osc, gain);
+      osc.start(now + i * 0.2);
+      osc.stop(now + i * 0.2 + 0.16);
     }
-    this.playNoisePunch(0.4, 0.85);
   }
 
   // ⚠️ BOSS 登場空襲重低音警報
@@ -1037,29 +1012,33 @@ class SoundSynthesizer {
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);
+      this._autoClean(osc, gain);
       osc.start(now + i * 0.35);
       osc.stop(now + i * 0.35 + 0.34);
     }
   }
 
-  // BOSS 重砲開火音
+  // BOSS 重砲開火音 (加入節流)
   playBossLaser() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.activeNodes > 12) return;
     const now = this.ctx.currentTime;
+    if (now - this.lastBossLaserTime < 0.08) return;
+    this.lastBossLaserTime = now;
     const osc = this.ctx.createOscillator();
     const gain = this.ctx.createGain();
     osc.type = 'triangle';
     osc.frequency.setValueAtTime(260, now);
-    osc.frequency.exponentialRampToValueAtTime(45, now + 0.25);
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.22);
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.24);
     osc.connect(gain);
     gain.connect(this.ctx.destination);
+    this._autoClean(osc, gain);
     osc.start(now);
-    osc.stop(now + 0.26);
+    osc.stop(now + 0.24);
   }
 
-  // 賽博 BGM (124 BPM)
+  // 賽博 BGM (124 BPM · 嚴格自動釋放音訊節點，徹底根除後期音訊圖堆積卡頓)
   startBgm() {
     if (this.bgmPlaying || !this.ctx) return;
     this.bgmPlaying = true;
@@ -1070,7 +1049,7 @@ class SoundSynthesizer {
     const leadNotes = [220, 0, 261.6, 0, 293.6, 0, 329.6, 0, 392, 0, 329.6, 0, 293.6, 0, 261.6, 0];
 
     this.bgmTimer = setInterval(() => {
-      if (!this.bgmPlaying || !this.ctx) return;
+      if (!this.bgmPlaying || !this.ctx || this.activeNodes > 10) return;
       const now = this.ctx.currentTime;
       const s = this.step % 16;
       const pitchMod = this.isBulletTime ? 0.65 : 1.0;
@@ -1081,50 +1060,29 @@ class SoundSynthesizer {
         const kickGain = this.ctx.createGain();
         kickOsc.frequency.setValueAtTime(120 * pitchMod, now);
         kickOsc.frequency.exponentialRampToValueAtTime(35 * pitchMod, now + 0.08);
-        kickGain.gain.setValueAtTime(0.22, now);
+        kickGain.gain.setValueAtTime(0.20, now);
         kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
         kickOsc.connect(kickGain);
         kickGain.connect(this.ctx.destination);
+        this._autoClean(kickOsc, kickGain);
         kickOsc.start(now);
         kickOsc.stop(now + 0.09);
       }
 
-      // Hi-hat (共用噪音緩衝，零記憶體分配)
-      if (s % 2 === 1 && this.sharedNoiseBuffer) {
-        const hh = this.ctx.createBufferSource();
-        hh.buffer = this.sharedNoiseBuffer;
-        const hhFilter = this.ctx.createBiquadFilter();
-        hhFilter.type = 'highpass';
-        hhFilter.frequency.setValueAtTime(7000 * pitchMod, now);
-        const hhGain = this.ctx.createGain();
-        hhGain.gain.setValueAtTime(0.05, now);
-        hhGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
-        hh.connect(hhFilter);
-        hhFilter.connect(hhGain);
-        hhGain.connect(this.ctx.destination);
-        hh.start(now);
-        hh.stop(now + 0.03);
-      }
-
-      // Bass
+      // Bass (移除每拍新建 BiquadFilterNode，改用純三角波低音，降低 60% WebAudio CPU 開銷)
       const bassFreq = bassNotes[s] * pitchMod;
-      if (bassFreq > 0) {
+      if (bassFreq > 0 && s % 2 === 0) {
         const bOsc = this.ctx.createOscillator();
         const bGain = this.ctx.createGain();
-        bOsc.type = 'sawtooth';
+        bOsc.type = 'triangle';
         bOsc.frequency.setValueAtTime(bassFreq, now);
-        const bFilter = this.ctx.createBiquadFilter();
-        bFilter.type = 'lowpass';
-        bFilter.frequency.setValueAtTime(300 * pitchMod, now);
-
-        bGain.gain.setValueAtTime(0.07, now);
-        bGain.gain.exponentialRampToValueAtTime(0.001, now + stepInterval * 1.5);
-
-        bOsc.connect(bFilter);
-        bFilter.connect(bGain);
+        bGain.gain.setValueAtTime(0.11, now);
+        bGain.gain.exponentialRampToValueAtTime(0.001, now + stepInterval * 1.8);
+        bOsc.connect(bGain);
         bGain.connect(this.ctx.destination);
+        this._autoClean(bOsc, bGain);
         bOsc.start(now);
-        bOsc.stop(now + stepInterval * 1.5);
+        bOsc.stop(now + stepInterval * 1.8);
       }
 
       // Lead
@@ -1135,11 +1093,12 @@ class SoundSynthesizer {
         lOsc.type = 'sine';
         lOsc.frequency.setValueAtTime(leadFreq, now);
         lGain.gain.setValueAtTime(0.035, now);
-        lGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        lGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
         lOsc.connect(lGain);
         lGain.connect(this.ctx.destination);
+        this._autoClean(lOsc, lGain);
         lOsc.start(now);
-        lOsc.stop(now + 0.12);
+        lOsc.stop(now + 0.11);
       }
 
       this.step++;
@@ -1171,7 +1130,8 @@ const sfx = new SoundSynthesizer();
 // 2. 遊戲狀態機與肉鴿晶片屬性
 // ==========================================
 const canvas = document.getElementById('game-canvas');
-const ctx = canvas.getContext('2d');
+// iPhone XR 關鍵優化：關閉 Canvas 底層 Alpha 通道合成，讓 iOS Metal 直接以不透明圖層硬體加速輸出
+const ctx = canvas.getContext('2d', { alpha: false });
 const videoElement = document.getElementById('webcam');
 const flashOverlay = document.getElementById('flash-overlay');
 const damageOverlay = document.getElementById('damage-overlay');
@@ -1179,12 +1139,40 @@ const bulletTimeOverlay = document.getElementById('bullet-time-overlay');
 const scoreElem = document.getElementById('score');
 const comboElem = document.getElementById('combo');
 const hpBarFill = document.getElementById('hp-bar-fill');
+const shieldFillElem = document.getElementById('shield-bar-fill');
 const perksInventory = document.getElementById('perks-inventory');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 const bgmToggleBtn = document.getElementById('bgm-toggle-btn');
 const gameOverModal = document.getElementById('game-over-modal');
 const gameOverStats = document.getElementById('game-over-stats');
+const slotChronoElem = document.getElementById('slot-chrono');
+const rackPistolElem = document.getElementById('rack-pistol');
+const rackShotgunElem = document.getElementById('rack-shotgun');
+const rackShieldElem = document.getElementById('rack-shield');
+const rackMinigunElem = document.getElementById('rack-minigun');
+const rackRailgunElem = document.getElementById('rack-railgun');
+
+// DOM 髒檢查快取 (Dirty-Checking Cache)，徹底避免每幀寫入 DOM 觸發 iOS WebKit Style Recalc 與 Layout Reflow
+let _lastStatusReady = null;
+let _lastStatusMsg = '';
+let _lastRackSignature = '';
+let _lastShieldPct = -1;
+let _lastShieldBg = '';
+let _lastChronoSec = -1;
+let _bannerTimer = null;
+let _bossSpawnTimer = null;
+
+function setHudStatus(isReady, msg) {
+  if (_lastStatusReady !== isReady) {
+    _lastStatusReady = isReady;
+    statusDot.className = isReady ? 'status-dot ready' : 'status-dot';
+  }
+  if (_lastStatusMsg !== msg) {
+    _lastStatusMsg = msg;
+    statusText.innerText = msg;
+  }
+}
 
 let currentFacingMode = 'environment';
 let cameraInstance = null;
@@ -1247,26 +1235,24 @@ const unlockState = {
 };
 
 function updateWeaponRackUI() {
-  const rackPistol = document.getElementById('rack-pistol');
-  const rackShotgun = document.getElementById('rack-shotgun');
-  const rackShield = document.getElementById('rack-shield');
-  const rackMinigun = document.getElementById('rack-minigun');
-  const rackRailgun = document.getElementById('rack-railgun');
+  const sig = `${currentWeapon}|${isShieldActive ? 1 : 0}|${unlockState.shotgun ? 1 : 0}${unlockState.shield ? 1 : 0}${unlockState.minigun ? 1 : 0}${unlockState.railgun ? 1 : 0}`;
+  if (sig === _lastRackSignature) return;
+  _lastRackSignature = sig;
 
-  if (rackPistol) {
-    rackPistol.className = `rack-slot unlocked ${currentWeapon === 'PISTOL' ? 'active' : ''}`;
+  if (rackPistolElem) {
+    rackPistolElem.className = `rack-slot unlocked ${currentWeapon === 'PISTOL' ? 'active' : ''}`;
   }
-  if (rackShotgun) {
-    rackShotgun.className = `rack-slot ${unlockState.shotgun ? 'unlocked' : ''} ${currentWeapon === 'SHOTGUN' ? 'active' : ''}`;
+  if (rackShotgunElem) {
+    rackShotgunElem.className = `rack-slot ${unlockState.shotgun ? 'unlocked' : ''} ${currentWeapon === 'SHOTGUN' ? 'active' : ''}`;
   }
-  if (rackShield) {
-    rackShield.className = `rack-slot ${unlockState.shield ? 'unlocked' : ''} ${isShieldActive ? 'active' : ''}`;
+  if (rackShieldElem) {
+    rackShieldElem.className = `rack-slot ${unlockState.shield ? 'unlocked' : ''} ${isShieldActive ? 'active' : ''}`;
   }
-  if (rackMinigun) {
-    rackMinigun.className = `rack-slot ${unlockState.minigun ? 'unlocked' : ''} ${currentWeapon === 'MINIGUN' ? 'active' : ''}`;
+  if (rackMinigunElem) {
+    rackMinigunElem.className = `rack-slot ${unlockState.minigun ? 'unlocked' : ''} ${currentWeapon === 'MINIGUN' ? 'active' : ''}`;
   }
-  if (rackRailgun) {
-    rackRailgun.className = `rack-slot ${unlockState.railgun ? 'unlocked' : ''} ${currentWeapon === 'RAILGUN' ? 'active' : ''}`;
+  if (rackRailgunElem) {
+    rackRailgunElem.className = `rack-slot ${unlockState.railgun ? 'unlocked' : ''} ${currentWeapon === 'RAILGUN' ? 'active' : ''}`;
   }
 }
 
@@ -1597,13 +1583,14 @@ class KamikazeDrone {
   }
 }
 
-// 👑 全螢幕 BOSS 警報橫幅呼叫器
+// 👑 全螢幕 BOSS 警報橫幅呼叫器 (含計時器清理，防止連續觸發重疊)
 function showBossBanner(text, duration = 3200) {
   const banner = document.getElementById('boss-warning-banner');
   if (banner) {
+    if (_bannerTimer) clearTimeout(_bannerTimer);
     banner.innerText = text;
     banner.classList.add('active');
-    setTimeout(() => { banner.classList.remove('active'); }, duration);
+    _bannerTimer = setTimeout(() => { banner.classList.remove('active'); }, duration);
   }
 }
 
@@ -1682,9 +1669,14 @@ function jumpToBossStage(targetIdx) {
   if (targetIdx >= 9) unlockState.godslayer = true;
   updateWeaponRackUI();
 
+  if (_bossSpawnTimer) clearTimeout(_bossSpawnTimer);
   enemies = [];
   enemyBullets = [];
   screenWebs = [];
+  particles = [];
+  floatingTexts = [];
+  laserBeams = [];
+  lightningBolts = [];
   currentBoss = null;
   bossPhase = targetIdx;
   killCount = BOSS_TARGET_KILLS[targetIdx] || 12;
@@ -1715,12 +1707,13 @@ function triggerBossFight() {
   showBossBanner(`⚠️ WARNING: BOSS ${bossPhase + 1}/10\n${cfg.name} ⚠️`, 3400);
   screenShake = 26;
 
-  setTimeout(() => {
+  if (_bossSpawnTimer) clearTimeout(_bossSpawnTimer);
+  _bossSpawnTimer = setTimeout(() => {
     currentBoss = cfg.create();
   }, 1200);
 }
 
-// 💥 摧毀 BOSS 史詩連鎖大核爆與科技解鎖
+// 💥 摧毀 BOSS 史詩連鎖大核爆與科技解鎖 (清除全場殘留物件池，確保下一關如剛開局般絲滑)
 function destroyBoss() {
   if (!currentBoss) return;
   const bx = currentBoss.x;
@@ -1729,18 +1722,20 @@ function destroyBoss() {
   currentBoss = null;
   screenWebs = [];
   enemyBullets = [];
+  lightningBolts = [];
 
-  for (let i = 0; i < 4; i++) {
-    setTimeout(() => {
-      sfx.playExplosion();
-      screenShake = 22;
-      triggerCanvasFlash('#ffffff', 0.55);
-      spawnExplosion(bx + (Math.random() - 0.5) * 160, by + (Math.random() - 0.5) * 60, '#ff9900', 10);
-      spawnExplosion(bx + (Math.random() - 0.5) * 120, by + (Math.random() - 0.5) * 40, '#ff0055', 8);
-    }, i * 200);
-  }
+  sfx.playExplosion();
+  screenShake = 22;
+  triggerCanvasFlash('#ffffff', 0.55);
+  spawnExplosion(bx, by, '#ff9900', 12);
 
   setTimeout(() => {
+    sfx.playExplosion();
+    spawnExplosion(bx + (Math.random() - 0.5) * 100, by, '#ff0055', 10);
+  }, 250);
+
+  if (_bossSpawnTimer) clearTimeout(_bossSpawnTimer);
+  _bossSpawnTimer = setTimeout(() => {
     const rewardPoints = 4000 + phase * 800;
     score += rewardPoints;
     scoreElem.innerText = score;
@@ -1774,7 +1769,7 @@ function destroyBoss() {
 
     bossPhase = phase + 1;
     bossTriggered = false;
-  }, 1600);
+  }, 1500);
 }
 
 function triggerGameVictory() {
@@ -5742,13 +5737,16 @@ function updateHpUI() {
 }
 
 function updateShieldUI() {
-  const shieldFill = document.getElementById('shield-bar-fill');
-  if (shieldFill) {
-    const pct = Math.max(0, (shieldEnergy / maxShieldEnergy) * 100);
-    shieldFill.style.width = pct + '%';
-    if (shieldBreakCooldown > 0) shieldFill.style.background = '#ff0033';
-    else if (isShieldActive) shieldFill.style.background = '#00ffff';
-    else shieldFill.style.background = 'linear-gradient(90deg, #00bfff, #00ffaa)';
+  if (!shieldFillElem) return;
+  const pct = Math.round(Math.max(0, (shieldEnergy / maxShieldEnergy) * 100));
+  const bg = shieldBreakCooldown > 0 ? '#ff0033' : (isShieldActive ? '#00ffff' : '#00d8aa');
+  if (pct !== _lastShieldPct) {
+    _lastShieldPct = pct;
+    shieldFillElem.style.width = pct + '%';
+  }
+  if (bg !== _lastShieldBg) {
+    _lastShieldBg = bg;
+    shieldFillElem.style.background = bg;
   }
 }
 
@@ -5760,6 +5758,7 @@ function triggerGameOver() {
 }
 
 function restartGame() {
+  if (_bossSpawnTimer) clearTimeout(_bossSpawnTimer);
   currentHp = maxHp;
   score = 0;
   killCount = 0;
@@ -5773,6 +5772,7 @@ function restartGame() {
   bossTriggered = false;
   floatingChips = [];
   particles = [];
+  floatingTexts = [];
   laserBeams = [];
   lightningBolts = [];
   activePerks.teslaLevel = 0;
@@ -5826,25 +5826,46 @@ function restartGame() {
   sfx.startBgm();
 }
 
-function spawnExplosion(x, y, color = '#ff0055', count = 12) {
-  for (let i = 0; i < count; i++) {
-    const speed = 2.5 + Math.random() * 6;
+function spawnExplosion(x, y, color = '#ff0055', count = 6) {
+  if (particles.length >= 22) return;
+  const actualCount = Math.min(count, 6, 22 - particles.length);
+  for (let i = 0; i < actualCount; i++) {
+    const speed = 2.5 + Math.random() * 5.5;
     const ang = Math.random() * Math.PI * 2;
     particles.push({
       x: x, y: y,
       vx: Math.cos(ang) * speed,
-      vy: Math.sin(ang) * speed - 1.5,
-      size: 3 + Math.random() * 4,
+      vy: Math.sin(ang) * speed - 1.2,
+      size: 3 + Math.random() * 3.5,
       color: color,
       alpha: 1,
-      decay: 0.025 + Math.random() * 0.025,
+      decay: 0.04 + Math.random() * 0.03,
       gravity: 0.12
     });
   }
 }
 
+let _lastFloatTime = 0;
 function spawnFloatingText(text, x, y, color = '#ffdd00') {
-  floatingTexts.push({ text, x, y, alpha: 1, vy: -2.5, color });
+  const now = performance.now();
+  // 若場上已有相同文字，直接刷新位置與透明度，避免霰彈/加特林後期瞬間產生數十個重複浮動文字拖垮 iOS CoreText
+  for (let i = 0; i < floatingTexts.length; i++) {
+    const ft = floatingTexts[i];
+    if (ft.text === text || (now - _lastFloatTime < 75 && Math.hypot(ft.x - x, ft.y - y) < 65)) {
+      ft.text = text;
+      ft.x = x;
+      ft.y = y;
+      ft.color = color;
+      ft.alpha = 1;
+      _lastFloatTime = now;
+      return;
+    }
+  }
+  _lastFloatTime = now;
+  if (floatingTexts.length >= 5) {
+    floatingTexts.shift();
+  }
+  floatingTexts.push({ text, x, y, alpha: 1, vy: -2.4, color });
 }
 
 // ⚡ 閃電電弧連鎖 (Tesla Chain - 依等級擴散)
@@ -5893,8 +5914,8 @@ function executeFire(originX, originY, targetX, targetY) {
     const isMinigun = currentWeapon === 'MINIGUN';
 
     let cooldown = 170;
-    if (isMinigun) cooldown = unlockState.godslayer ? 50 : (unlockState.overdrive ? 65 : 85);
-    else if (isShotgun) cooldown = unlockState.overdrive ? 240 : 320;
+    if (isMinigun) cooldown = unlockState.godslayer ? 55 : (unlockState.overdrive ? 70 : 85);
+    else if (isShotgun) cooldown = unlockState.overdrive ? 250 : 320;
     else if (isRailgun) cooldown = unlockState.overdrive ? 360 : 480;
     else if (unlockState.overdrive) cooldown = 125;
 
@@ -5906,25 +5927,21 @@ function executeFire(originX, originY, targetX, targetY) {
     if (now - lastFireTime < cooldown) return;
     lastFireTime = now;
 
-    // 1. 音效、震動與零重繪 Canvas 閃光
+    // 1. 音效與零重繪 Canvas 閃光 (移除高頻 navigator.vibrate IPC 呼叫以防 iOS 主執行緒阻塞)
     if (isRailgun) {
       sfx.playRailgunBlast();
-      screenShake = 22;
-      triggerCanvasFlash('#0055ff', 0.35);
-      if (navigator.vibrate) navigator.vibrate([100, 30, 80]);
+      screenShake = 20;
+      triggerCanvasFlash('#0055ff', 0.32);
     } else if (isMinigun) {
       sfx.playMinigunShot();
-      screenShake = 4;
-      if (navigator.vibrate) navigator.vibrate([15]);
+      screenShake = 3;
     } else if (isShotgun) {
       sfx.playShotgun();
-      screenShake = 16;
-      triggerCanvasFlash('#ffaa00', 0.25);
-      if (navigator.vibrate) navigator.vibrate([60]);
+      screenShake = 14;
+      triggerCanvasFlash('#ffaa00', 0.22);
     } else {
       sfx.playLaserPistol();
-      screenShake = 8;
-      if (navigator.vibrate) navigator.vibrate([25]);
+      screenShake = 7;
     }
 
     // 1.8 優先射擊清除黏在螢幕上的【電磁蛛網】(screenWebs)
@@ -5935,7 +5952,7 @@ function executeFire(originX, originY, targetX, targetY) {
         if (dWeb < web.radius + (isShotgun ? 45 : 25) || isRailgun) {
           web.hp -= isShotgun ? 2 : 1;
           sfx.playHitSound();
-          spawnExplosion(web.x, web.y, '#00ffaa', 6);
+          spawnExplosion(web.x, web.y, '#00ffaa', 5);
           if (web.hp <= 0) {
             screenWebs.splice(w, 1);
             spawnFloatingText('🕸️ 蛛網清除！射速恢復！', web.x, web.y, '#00ffaa');
@@ -5980,8 +5997,8 @@ function executeFire(originX, originY, targetX, targetY) {
     } else if (isShotgun) {
       const baseAngle = Math.atan2(targetY - originY, targetX - originX);
       const spreadAngles = unlockState.godslayer
-        ? [-0.30, -0.20, -0.10, 0, 0.10, 0.20, 0.30]
-        : [-0.22, -0.11, 0, 0.11, 0.22];
+        ? [-0.26, -0.13, 0, 0.13, 0.26]
+        : [-0.20, -0.10, 0, 0.10, 0.20];
       const len = Math.hypot(targetX - originX, targetY - originY) || 300;
 
       for (let offset of spreadAngles) {
@@ -6001,14 +6018,15 @@ function executeFire(originX, originY, targetX, targetY) {
     }
 
     // 4. 繪製雷射與穿透碰撞判定
+    let bossHitsThisShot = 0;
     for (let p of pellets) {
       laserBeams.push({
         x1: originX, y1: originY,
         x2: p.tx, y2: p.ty,
         color: p.color,
-        width: isRailgun ? 38 : (isShotgun ? 6 : (isMinigun ? 3 : 4)),
+        width: isRailgun ? 38 : (isShotgun ? 5 : (isMinigun ? 3 : 4)),
         isRailgun: isRailgun,
-        decay: isRailgun ? 0.024 : 0.14,
+        decay: isRailgun ? 0.03 : 0.16,
         alpha: 1
       });
 
@@ -6028,12 +6046,12 @@ function executeFire(originX, originY, targetX, targetY) {
           sfx.playHitSound();
 
           if (activePerks.clusterLevel > 0 || isRailgun) {
-            spawnExplosion(isRailgun ? e.x : p.tx, isRailgun ? e.y : p.ty, isRailgun ? '#00ffff' : '#ff5500', 6);
+            spawnExplosion(isRailgun ? e.x : p.tx, isRailgun ? e.y : p.ty, isRailgun ? '#00ffff' : '#ff5500', 4);
           }
 
           if (e.hp <= 0) {
             sfx.playExplosion();
-            spawnExplosion(e.x, e.y, e.type === 'KAMIKAZE' ? '#ff3300' : '#00ffff', 10);
+            spawnExplosion(e.x, e.y, e.type === 'KAMIKAZE' ? '#ff3300' : '#00ffff', 6);
 
             if (activePerks.teslaLevel > 0) {
               triggerTeslaChain(e);
@@ -6098,7 +6116,7 @@ function executeFire(originX, originY, targetX, targetY) {
             b.vy = isFinite(dy / dist) ? (dy / dist) * speed : -speed;
             b.radius = Math.max(18, b.radius);
 
-            if (unlockState.plasmaParry && enemyBullets.length < 18) {
+            if (unlockState.plasmaParry && enemyBullets.length < 12) {
               for (let ang of [-0.25, 0.25]) {
                 const spark = new EnemyBullet(b.x, b.y, b.x + Math.sin(ang) * 200, b.y - 200, 14, '#00ffff', 12);
                 spark.isParried = true;
@@ -6109,13 +6127,13 @@ function executeFire(originX, originY, targetX, targetY) {
             sfx.playParryClang();
             screenShake = 15;
             activePerks.bulletTimeTimer = Math.max(activePerks.bulletTimeTimer, 0.2);
-            spawnExplosion(b.x, b.y, '#ffee00', 8);
+            spawnExplosion(b.x, b.y, '#ffee00', 5);
             spawnFloatingText('⚡ PARRY DEFLECTION! ⚡', b.x, b.y, '#ffea00');
             score += 400;
             scoreElem.innerText = score;
           } else {
             sfx.playHitSound();
-            spawnExplosion(b.x, b.y, '#00f0ff', 5);
+            spawnExplosion(b.x, b.y, '#00f0ff', 4);
             enemyBullets.splice(i, 1);
             score += 50;
             scoreElem.innerText = score;
@@ -6128,11 +6146,13 @@ function executeFire(originX, originY, targetX, targetY) {
         }
       }
 
-      // 6. 攻擊傳奇 BOSS 弱點判定
-      if (!pelletConsumed && currentBoss && currentBoss.y > 0) {
+      // 6. 攻擊傳奇 BOSS 弱點判定 (霰彈槍合併單發命中上限，防止後期 5~7 顆彈丸同幀觸發 7 次 BOSS 特效與反擊彈造成瞬間卡頓)
+      if (!pelletConsumed && currentBoss && currentBoss.y > 0 && bossHitsThisShot < 2) {
         let damage = isRailgun ? (10 + activePerks.clusterLevel * 3) : (1 + activePerks.clusterLevel);
+        if (isShotgun) damage = Math.ceil(damage * (unlockState.godslayer ? 2.4 : 1.8));
         if (unlockState.quantumEye) damage = Math.ceil(damage * 1.75);
-        currentBoss.onHit(isRailgun ? currentBoss.x : p.tx, isRailgun ? currentBoss.y : p.ty, damage, false, null);
+        const didHit = currentBoss.onHit(isRailgun ? currentBoss.x : p.tx, isRailgun ? currentBoss.y : p.ty, damage, false, null);
+        if (didHit) bossHitsThisShot++;
       }
     }
   } catch (err) {
@@ -6163,6 +6183,8 @@ window.addEventListener('pointerdown', (e) => {
 // ==========================================
 // 6. MediaPipe 手勢辨識 (純大拇指動態扳機 · 重疊絕不走火 · 四大神兵)
 // ==========================================
+const handPtsPool = Array.from({ length: 21 }, () => ({ x: 0, y: 0, z: 0 }));
+
 function onResults(results) {
   if (isGameOver) return;
   try {
@@ -6174,8 +6196,7 @@ function onResults(results) {
         gunCrosshair.active = false;
         isShieldActive = false;
         currentHandLandmarks = null;
-        statusDot.className = 'status-dot';
-        statusText.innerText = '尋找手部中... 請將手伸入鏡頭 👉';
+        setHudStatus(false, '尋找手部中... 請將手伸入鏡頭 👉');
         sfx.stopRailgunHum();
         railgunChargeTimer = 0;
         isRailgunCharged = false;
@@ -6185,15 +6206,20 @@ function onResults(results) {
       return;
     }
 
-    const deltaHand = lastHandTimestamp ? Math.min((now - lastHandTimestamp) / 1000, 0.1) : 0.033;
+    const deltaHand = lastHandTimestamp ? Math.min((now - lastHandTimestamp) / 1000, 0.1) : 0.045;
     lastHandTimestamp = now;
 
     const landmarks = results.multiHandLandmarks[0];
-    const pts = landmarks.map(p => ({
-      x: (currentFacingMode === 'user' ? (1 - p.x) : p.x) * canvas.width,
-      y: p.y * canvas.height,
-      z: p.z
-    }));
+    const isMirror = currentFacingMode === 'user';
+    const cw = canvas.width;
+    const ch = canvas.height;
+    for (let i = 0; i < 21; i++) {
+      const p = landmarks[i];
+      handPtsPool[i].x = (isMirror ? (1 - p.x) : p.x) * cw;
+      handPtsPool[i].y = p.y * ch;
+      handPtsPool[i].z = p.z;
+    }
+    const pts = handPtsPool;
     currentHandLandmarks = pts;
 
     const dist = (i, j) => Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
@@ -6211,16 +6237,14 @@ function onResults(results) {
       if (!unlockState.shield) {
         isShieldActive = false;
         gunCrosshair.active = false;
-        statusDot.className = 'status-dot';
-        statusText.innerText = '🔒 全息蜂巢盾尚未解鎖 (擊敗 BOSS 1 或選關解鎖)';
+        setHudStatus(false, '🔒 全息蜂巢盾尚未解鎖 (擊敗 BOSS 1 或選關解鎖)');
         updateWeaponRackUI();
         return;
       }
       if (shieldBreakCooldown > 0) {
         isShieldActive = false;
         gunCrosshair.active = false;
-        statusDot.className = 'status-dot';
-        statusText.innerText = `⚠️ 護盾過熱冷卻中 (${shieldBreakCooldown.toFixed(1)}s)...`;
+        setHudStatus(false, '⚠️ 護盾過熱冷卻中...');
       } else if (shieldEnergy > 5) {
         if (!isShieldActive) {
           sfx.playShieldDeploy();
@@ -6238,7 +6262,7 @@ function onResults(results) {
               b.vy = (dy / d) * 14.0;
               sfx.playParryClang();
               screenShake = 16;
-              spawnExplosion(b.x, b.y, '#ffea00', 10);
+              spawnExplosion(b.x, b.y, '#ffea00', 6);
               spawnFloatingText('✋ PALM PARRY COUNTER!!', b.x, b.y, '#ffea00');
             }
           }
@@ -6252,8 +6276,7 @@ function onResults(results) {
         canTriggerAutofire = false;
         isThumbReady = false;
         lastValidGunTime = now;
-        statusDot.className = 'status-dot ready';
-        statusText.innerText = `🛡️ 全息蜂巢盾防禦中！(能量: ${Math.floor(shieldEnergy)}%)`;
+        setHudStatus(true, '🛡️ 全息蜂巢盾防禦中！');
       }
       updateWeaponRackUI();
       return;
@@ -6274,7 +6297,8 @@ function onResults(results) {
       lastValidGunTime = now;
       gunCrosshair.active = true;
 
-      muzzlePos = { x: pts[8].x, y: pts[8].y };
+      muzzlePos.x = pts[8].x;
+      muzzlePos.y = pts[8].y;
 
       const dirX = pts[8].x - pts[6].x;
       const dirY = pts[8].y - pts[6].y;
@@ -6294,8 +6318,7 @@ function onResults(results) {
       if (isMiddleStraight) {
         if (!unlockState.shotgun) {
           currentWeapon = 'PISTOL';
-          statusDot.className = 'status-dot';
-          statusText.innerText = '🔒 雙指霰彈尚未解鎖 (消滅 5 名敵人或選關解鎖)';
+          setHudStatus(false, '🔒 雙指霰彈尚未解鎖 (消滅 5 名敵人或選關解鎖)');
           updateWeaponRackUI();
           return;
         }
@@ -6309,12 +6332,10 @@ function onResults(results) {
 
         if (isThumbUp) {
           isThumbReady = true;
-          statusDot.className = 'status-dot ready';
-          statusText.innerText = '💥 雙指霰彈就緒！向下扣動大拇指開火！';
+          setHudStatus(true, '💥 雙指霰彈就緒！向下扣動大拇指開火！');
         } else if (isThumbDown && isThumbReady) {
           isThumbReady = false;
-          statusDot.className = 'status-dot';
-          statusText.innerText = '💥 FIRE!! 霰彈轟擊！';
+          setHudStatus(false, '💥 FIRE!! 霰彈轟擊！');
           executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
         }
       } else {
@@ -6334,19 +6355,15 @@ function onResults(results) {
             if (railgunChargeTimer >= reqChargeTime) {
               isRailgunCharged = true;
               currentWeapon = 'RAILGUN';
-              statusDot.className = 'status-dot ready';
-              statusText.innerText = '⚡ 軌道砲 100% 充能完畢！向下扣下拇指發射貫穿全場！';
+              setHudStatus(true, '⚡ 軌道砲 100% 充能完畢！向下扣下拇指發射！');
             } else {
               currentWeapon = 'PISTOL';
-              const pct = Math.floor(ratio * 100);
-              statusDot.className = 'status-dot ready';
-              statusText.innerText = `⚡ 軌道砲聚能中 ${pct}% ... (立起保持聚能)`;
+              setHudStatus(true, '⚡ 軌道砲高能聚能中... (保持拇指立起)');
             }
           } else {
             currentWeapon = 'PISTOL';
             isRailgunCharged = false;
-            statusDot.className = 'status-dot ready';
-            statusText.innerText = '🎯 瞄準中！扣下拇指單發' + (unlockState.minigun ? ' / 按住不放加特林' : '') + (unlockState.railgun ? ' / 立起蓄力軌道砲' : '');
+            setHudStatus(true, '🎯 瞄準中！扣下拇指開火');
           }
         } else if (isThumbDown) {
           sfx.stopRailgunHum();
@@ -6363,25 +6380,21 @@ function onResults(results) {
               isRailgunCharged = false;
               canTriggerAutofire = false;
               currentWeapon = 'PISTOL';
-              statusDot.className = 'status-dot';
-              statusText.innerText = '⚡ 軌道砲高能貫穿！轟碎全場！';
+              setHudStatus(false, '⚡ 軌道砲高能貫穿！轟碎全場！');
             } else {
               currentWeapon = 'PISTOL';
               executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
               railgunChargeTimer = 0;
-              statusDot.className = 'status-dot';
-              statusText.innerText = '🔫 FIRE!! 單發手槍' + (unlockState.minigun ? ' (保持按住拇指進入加特林掃射)' : '');
+              setHudStatus(false, '🔫 FIRE!! 單發手槍');
             }
           } else if (canTriggerAutofire) {
             if (!unlockState.minigun) {
-              statusDot.className = 'status-dot';
-              statusText.innerText = '🔒 加特林暴風掃射尚未解鎖 (擊敗 BOSS 2 解鎖)';
+              setHudStatus(false, '🔒 加特林暴風掃射尚未解鎖 (擊敗 BOSS 2 解鎖)');
             } else {
               thumbDownTimer += deltaHand;
               if (thumbDownTimer > 0.20) {
                 currentWeapon = 'MINIGUN';
-                statusDot.className = 'status-dot';
-                statusText.innerText = '🌪️ 加特林極速暴風連射中！！';
+                setHudStatus(false, '🌪️ 加特林極速暴風連射中！！');
                 executeFire(muzzlePos.x, muzzlePos.y, gunCrosshair.x, gunCrosshair.y);
               }
             }
@@ -6397,8 +6410,7 @@ function onResults(results) {
         isRailgunCharged = false;
         thumbDownTimer = 0;
         canTriggerAutofire = false;
-        statusDot.className = 'status-dot';
-        statusText.innerText = '請比出手指槍：單指 👉 手槍/加特林/軌道砲 / 雙指 ✌️ 霰彈';
+        setHudStatus(false, '請比出手指槍：單指 👉 手槍/加特林/軌道砲 / 雙指 ✌️ 霰彈');
       }
     }
     updateWeaponRackUI();
@@ -6430,21 +6442,22 @@ function gameLoop() {
     }
     updateShieldUI();
 
-    // ⏱️ 子彈時間倒數計算
+    // ⏱️ 子彈時間倒數計算 (髒檢查避免每幀寫入 DOM)
     let timeScale = 1.0;
     if (activePerks.bulletTimeTimer > 0) {
       activePerks.bulletTimeTimer -= dt;
       timeScale = 0.28;
-      const slotChrono = document.getElementById('slot-chrono');
-      if (slotChrono) {
-        slotChrono.innerText = `⏱️ ${Math.ceil(activePerks.bulletTimeTimer)}s`;
+      const sec = Math.ceil(activePerks.bulletTimeTimer);
+      if (slotChronoElem && sec !== _lastChronoSec) {
+        _lastChronoSec = sec;
+        slotChronoElem.innerText = `⏱️ ${sec}s`;
       }
       if (activePerks.bulletTimeTimer <= 0) {
-        bulletTimeOverlay.style.opacity = '0';
         sfx.isBulletTime = false;
-        if (slotChrono) {
-          slotChrono.className = 'perk-slot';
-          slotChrono.innerText = '⏱️ --';
+        _lastChronoSec = -1;
+        if (slotChronoElem) {
+          slotChronoElem.className = 'perk-slot';
+          slotChronoElem.innerText = '⏱️ --';
         }
       }
     }
@@ -6489,12 +6502,12 @@ function gameLoop() {
       }
     }
 
-    // 嚴格物件池上限保護 (iPhone XR 恆定 60FPS 保障)
-    if (particles.length > 32) particles.splice(0, particles.length - 32);
-    if (enemyBullets.length > 16) enemyBullets.splice(0, enemyBullets.length - 16);
-    if (laserBeams.length > 8) laserBeams.splice(0, laserBeams.length - 8);
-    if (lightningBolts.length > 4) lightningBolts.splice(0, lightningBolts.length - 4);
-    if (floatingTexts.length > 7) floatingTexts.splice(0, floatingTexts.length - 7);
+    // 嚴格物件池上限保護 (iPhone XR 長時間遊玩恆定 60FPS 保障)
+    if (particles.length > 22) particles.splice(0, particles.length - 22);
+    if (enemyBullets.length > 14) enemyBullets.splice(0, enemyBullets.length - 14);
+    if (laserBeams.length > 6) laserBeams.splice(0, laserBeams.length - 6);
+    if (lightningBolts.length > 3) lightningBolts.splice(0, lightningBolts.length - 3);
+    if (floatingTexts.length > 5) floatingTexts.splice(0, floatingTexts.length - 5);
 
     // 螢幕震動
     ctx.save();
@@ -6506,18 +6519,17 @@ function gameLoop() {
       if (screenShake < 0.5) screenShake = 0;
     }
 
-    // 1. 繪製相機畫面 (移除每幀全螢幕 createRadialGradient，改用極輕量半透明暗化層)
+    // 1. 繪製相機畫面 (移除每幀全螢幕半透明 fillRect，直接繪製相機畫面，省下 iPhone XR 全螢幕 Overdraw 頻寬)
     if (videoElement.readyState >= 2) {
-      ctx.save();
       if (currentFacingMode === 'user') {
+        ctx.save();
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      } else {
+        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
       }
-      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-      ctx.restore();
-
-      ctx.fillStyle = 'rgba(5, 10, 24, 0.25)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else {
       ctx.fillStyle = '#0a0d1a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -6570,21 +6582,21 @@ function gameLoop() {
 
       if (beam.isRailgun) {
         ctx.strokeStyle = 'rgba(0, 60, 255, 0.38)';
-        ctx.lineWidth = 48 * Math.sqrt(beam.alpha);
+        ctx.lineWidth = 44 * beam.alpha;
         ctx.beginPath();
         ctx.moveTo(beam.x1, beam.y1);
         ctx.lineTo(beam.x2, beam.y2);
         ctx.stroke();
 
         ctx.strokeStyle = '#0088ff';
-        ctx.lineWidth = 22 * Math.sqrt(beam.alpha);
+        ctx.lineWidth = 20 * beam.alpha;
         ctx.beginPath();
         ctx.moveTo(beam.x1, beam.y1);
         ctx.lineTo(beam.x2, beam.y2);
         ctx.stroke();
 
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 6 * Math.sqrt(beam.alpha);
+        ctx.lineWidth = 6 * beam.alpha;
         ctx.beginPath();
         ctx.moveTo(beam.x1, beam.y1);
         ctx.lineTo(beam.x2, beam.y2);
@@ -6599,11 +6611,11 @@ function gameLoop() {
       }
       ctx.restore();
 
-      beam.alpha -= (beam.decay || 0.12);
+      beam.alpha -= (beam.decay || 0.14);
       if (beam.alpha <= 0) laserBeams.splice(i, 1);
     }
 
-    // 6. 繪製粒子碎片
+    // 6. 繪製粒子碎片 (改用極速 fillRect 取代 arc，降低 iPhone XR 頂點光柵化開銷)
     ctx.save();
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
@@ -6619,9 +6631,8 @@ function gameLoop() {
 
       ctx.fillStyle = p.color;
       ctx.globalAlpha = Math.max(0, p.alpha);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fill();
+      const sz = p.size * 1.6;
+      ctx.fillRect(p.x - sz * 0.5, p.y - sz * 0.5, sz, sz);
     }
     ctx.restore();
 
@@ -6632,7 +6643,6 @@ function gameLoop() {
         ctx.translate(web.x, web.y);
         ctx.strokeStyle = 'rgba(0, 255, 170, 0.85)';
         ctx.lineWidth = 2.5;
-        // 放射狀蛛網絲
         for (let r = 0; r < 8; r++) {
           const a = (r * Math.PI) / 4;
           ctx.beginPath();
@@ -6640,8 +6650,7 @@ function gameLoop() {
           ctx.lineTo(Math.cos(a) * web.radius, Math.sin(a) * web.radius);
           ctx.stroke();
         }
-        // 同心八角蛛網環
-        for (let ring of [0.35, 0.68, 1.0]) {
+        for (let ring of [0.5, 1.0]) {
           ctx.beginPath();
           for (let r = 0; r <= 8; r++) {
             const a = (r * Math.PI) / 4;
@@ -6661,27 +6670,30 @@ function gameLoop() {
       ctx.restore();
     }
 
-    // 7. 繪製浮動文字 (零 shadowBlur，改用黑邊描字清晰銳利且不卡頓)
-    ctx.save();
-    ctx.font = '900 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    for (let i = floatingTexts.length - 1; i >= 0; i--) {
-      const ft = floatingTexts[i];
-      ft.y += ft.vy * timeScale;
-      ft.alpha -= 0.025 * timeScale;
+    // 7. 繪製浮動文字 (移除昂貴的 ctx.strokeText 路徑描邊，改用純 fillText，讓 iOS CoreText 文字渲染提速 3 倍)
+    if (floatingTexts.length > 0) {
+      ctx.save();
+      ctx.font = '900 17px sans-serif';
+      ctx.textAlign = 'center';
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy * timeScale;
+        ft.alpha -= 0.032 * timeScale;
 
-      ctx.globalAlpha = Math.max(0, ft.alpha);
-      ctx.fillStyle = ft.color;
-      ctx.strokeText(ft.text, ft.x, ft.y);
-      ctx.fillText(ft.text, ft.x, ft.y);
-
-      if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+        if (ft.alpha <= 0) {
+          floatingTexts.splice(i, 1);
+          continue;
+        }
+        ctx.globalAlpha = ft.alpha;
+        ctx.fillStyle = '#000000';
+        ctx.fillText(ft.text, ft.x + 1.5, ft.y + 1.5);
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+      }
+      ctx.restore();
     }
-    ctx.restore();
 
-    // 8. 繪製霓虹手部骨架 (零 shadowBlur)
+    // 8. 繪製霓虹手部骨架 (合併為單一 Path 批次繪製，從 21 次 stroke 降為 1 次 stroke！)
     if (currentHandLandmarks) {
       const pts = currentHandLandmarks;
       ctx.save();
@@ -6694,12 +6706,14 @@ function gameLoop() {
         [9, 13], [13, 14], [14, 15], [15, 16],
         [13, 17], [17, 18], [18, 19], [19, 20], [0, 17]
       ];
-      for (const [a, b] of connections) {
-        ctx.beginPath();
+      ctx.beginPath();
+      for (let i = 0; i < connections.length; i++) {
+        const a = connections[i][0];
+        const b = connections[i][1];
         ctx.moveTo(pts[a].x, pts[a].y);
         ctx.lineTo(pts[b].x, pts[b].y);
-        ctx.stroke();
       }
+      ctx.stroke();
 
       ctx.fillStyle = currentWeapon === 'SHOTGUN' ? '#ffaa00' : (currentWeapon === 'MINIGUN' ? '#ff3b30' : '#00f0ff');
       ctx.beginPath();
@@ -6777,7 +6791,6 @@ function gameLoop() {
 
     // 9. 繪製四大神兵專屬動態準星 (含 BOSS 2 引力光束拉扯干擾)
     if (gunCrosshair.active) {
-      // 🛸 若 BOSS 2 虛空幽浮母體開啟「引力牽引光束」，強行將玩家準星往飛碟方向拉扯！
       if (currentBoss && currentBoss.tractorActive) {
         gunCrosshair.targetX += (currentBoss.x - gunCrosshair.targetX) * 0.35;
         gunCrosshair.targetY += (currentBoss.y - gunCrosshair.targetY) * 0.35;
@@ -6866,7 +6879,7 @@ function gameLoop() {
       ctx.fillStyle = canvasFlash.color;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
-      canvasFlash.alpha *= 0.80;
+      canvasFlash.alpha *= 0.78;
     }
 
     ctx.restore();
@@ -6889,7 +6902,7 @@ function drawHexShieldCell(ctx, x, y, r) {
 }
 
 // ==========================================
-// 8. 初始化 MediaPipe Hands & 攝影機控制 (iPhone XR 專屬節流與降載優化)
+// 8. 初始化 MediaPipe Hands & 攝影機控制 (iPhone XR 專屬防過熱降頻與降載優化)
 // ==========================================
 const hands = new Hands({
   locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -6913,9 +6926,9 @@ function startCamera(facingMode = 'environment') {
 
   cameraInstance = new Camera(videoElement, {
     onFrame: async () => {
-      // iPhone XR 關鍵優化：AI 手勢推論節流至 ~28 FPS (每 36ms 一次)，把 50% 以上 GPU 算力讓給 Canvas 60FPS 渲染！
+      // iPhone XR 關鍵抗熱降頻優化：AI 手勢推論節流至 ~20 FPS (每 50ms 一次)，配合 60FPS 準星插值，徹底解決遊玩 5 分鐘後手機發燙降頻卡頓！
       const now = performance.now();
-      if (isProcessingAiFrame || (now - lastAiInferTime < 36)) return;
+      if (isProcessingAiFrame || (now - lastAiInferTime < 50)) return;
       isProcessingAiFrame = true;
       lastAiInferTime = now;
       try {
@@ -6926,8 +6939,8 @@ function startCamera(facingMode = 'environment') {
         isProcessingAiFrame = false;
       }
     },
-    width: { ideal: 480 },
-    height: { ideal: 360 },
+    width: { ideal: 384 },
+    height: { ideal: 288 },
     facingMode: facingMode
   });
   cameraInstance.start();
