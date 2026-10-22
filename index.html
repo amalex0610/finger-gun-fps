@@ -1299,13 +1299,15 @@ window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
 // ==========================================
-// 3. 肉鴿晶片類別：浮動晶片箱 (射擊拾取)
+// 3. 肉鴿晶片類別：浮動晶片箱 (射擊拾取 / 含惡意詭雷假晶片)
 // ==========================================
 const PERK_DEFINITIONS = [
-  { id: 'tesla', name: '⚡ 連環電弧', desc: '擊殺連鎖彈射', color: '#00f0ff' },
-  { id: 'cluster', name: '💥 穿透高爆', desc: '子彈貫穿並引發AOE', color: '#ff9900' },
-  { id: 'chrono', name: '⏱️ 子彈時間', desc: '進入6秒時空減速', color: '#00ff88' },
-  { id: 'nano', name: '🛡️ 奈米護盾', desc: '回血40並獲得抵擋盾', color: '#ff00aa' }
+  { id: 'tesla', name: '⚡ 連環電弧', desc: '擊殺連鎖彈射', color: '#00f0ff', isMimic: false },
+  { id: 'cluster', name: '💥 穿透高爆', desc: '子彈貫穿並引發AOE', color: '#ff9900', isMimic: false },
+  { id: 'chrono', name: '⏱️ 子彈時間', desc: '進入6秒時空減速', color: '#00ff88', isMimic: false },
+  { id: 'nano', name: '🛡️ 奈米護盾', desc: '回血40並獲得抵擋盾', color: '#ff00aa', isMimic: false },
+  // ☠️ 極致惡意：黑心詭雷假晶片 (偽裝成稀有金晶片，射擊直接大爆炸自傷並癱瘓護盾！)
+  { id: 'mimic_bomb', name: '👑 偽·神王晶片', desc: '射擊即引爆電磁詭雷！', color: '#ff0055', isMimic: true }
 ];
 
 class FloatingChip {
@@ -1318,11 +1320,14 @@ class FloatingChip {
     this.angle = 0;
     this.alpha = 1;
     this.isDead = false;
+    this.isMimic = !!def.isMimic;
+    this.glitchTimer = 0;
   }
 
   update(dt) {
     this.y += this.vy;
     this.angle += 0.04;
+    this.glitchTimer += dt;
     if (this.y > canvas.height + 60) this.isDead = true;
   }
 
@@ -1330,11 +1335,15 @@ class FloatingChip {
     ctx.save();
     ctx.translate(this.x, this.y);
 
-    // 外層旋轉全息六角環 (零 shadowBlur 多重描邊)
+    // 外層旋轉全息六角環 (若為假晶片，微弱閃爍暗黑警告色，但外表極像金色稀有晶片)
+    const ringColor = this.isMimic 
+      ? (Math.sin(this.glitchTimer * 8) > 0.85 ? '#ff0044' : '#ffd700') 
+      : this.def.color;
+
     ctx.rotate(this.angle);
-    ctx.strokeStyle = this.def.color;
-    ctx.globalAlpha = 0.3;
-    ctx.lineWidth = 6;
+    ctx.strokeStyle = ringColor;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 5;
     ctx.beginPath();
     for (let i = 0; i < 6; i++) {
       const a = (i * Math.PI) / 3;
@@ -1352,23 +1361,24 @@ class FloatingChip {
 
     // 內層微光晶片卡
     ctx.rotate(-this.angle * 2);
-    ctx.fillStyle = 'rgba(10, 20, 40, 0.8)';
+    ctx.fillStyle = this.isMimic ? 'rgba(30, 5, 12, 0.9)' : 'rgba(10, 20, 40, 0.8)';
     ctx.fillRect(-18, -18, 36, 36);
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = this.isMimic ? '#ff3366' : '#fff';
     ctx.lineWidth = 1;
     ctx.strokeRect(-18, -18, 36, 36);
 
-    // 核心圖示
+    // 核心圖示 (假晶片在特定角度會閃現骷髏頭 💀，考驗玩家眼力與貪念)
     ctx.fillStyle = '#fff';
     ctx.font = '16px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(this.def.name.slice(0, 2), 0, 0);
+    const showSkull = this.isMimic && (Math.sin(this.glitchTimer * 6) > 0.6);
+    ctx.fillText(showSkull ? '💀' : this.def.name.slice(0, 2), 0, 0);
 
-    // 懸浮標題指示
+    // 懸浮標題指示 (假晶片名稱極具誘惑力)
     ctx.font = '900 11px sans-serif';
-    ctx.fillStyle = this.def.color;
-    ctx.fillText(this.def.name, 0, -this.radius - 8);
+    ctx.fillStyle = ringColor;
+    ctx.fillText(this.isMimic ? '✨ 👑 神級晶片(?)' : this.def.name, 0, -this.radius - 8);
     ctx.font = '800 9px sans-serif';
     ctx.fillStyle = '#fff';
     ctx.fillText('SHOOT TO EQUIP', 0, this.radius + 12);
@@ -1377,12 +1387,20 @@ class FloatingChip {
   }
 }
 
-// 掉落肉鴿晶片
+// 掉落肉鴿晶片 (惡意機制：30% 機率摻雜致命詭雷假晶片)
 function spawnPerkDrop() {
-  const available = PERK_DEFINITIONS.filter(p => !activePerks[p.id] || p.id === 'chrono' || p.id === 'nano');
+  const available = PERK_DEFINITIONS.filter(p => !p.isMimic && (!activePerks[p.id] || p.id === 'chrono' || p.id === 'nano'));
   if (available.length === 0) return;
 
   const picked = [...available].sort(() => 0.5 - Math.random()).slice(0, 2);
+  // 30% 機率將其中一顆替換為惡意假晶片
+  if (Math.random() < 0.35) {
+    const mimicDef = PERK_DEFINITIONS.find(p => p.isMimic);
+    if (mimicDef) {
+      picked[Math.floor(Math.random() * picked.length)] = mimicDef;
+    }
+  }
+
   picked.forEach((p, index) => {
     const posX = canvas.width * (0.35 + index * 0.3);
     const posY = 50 + Math.random() * 40;
@@ -1392,8 +1410,25 @@ function spawnPerkDrop() {
   spawnFloatingText('⚡ CHIP SYNCHRONIZING...', canvas.width * 0.5, 90, '#00f0ff');
 }
 
-// 裝備晶片生效 (固定 4 格槽位升級機制)
+// 裝備晶片生效 (若射中假晶片：觸發惡意詭雷重傷！)
 function equipPerk(def) {
+  if (def.isMimic) {
+    // ☠️ 貪心懲罰：黑心詭雷自爆！扣 40HP ＋ 強制護盾過載 4 秒 ＋ 螢幕巨震！
+    sfx.playShieldBreak();
+    sfx.playHurtSound();
+    screenShake = 28;
+    triggerCanvasFlash('#ff0033', 0.65);
+    applyDamage(35);
+    if (isShieldActive) {
+      isShieldActive = false;
+    }
+    shieldEnergy = 0;
+    shieldBreakCooldown = 4.0;
+    updateShieldUI();
+    spawnFloatingText('💀 靠！是假晶片詭雷！護盾過載癱瘓！-35HP', canvas.width * 0.5, canvas.height * 0.45, '#ff0055');
+    return;
+  }
+
   sfx.playUpgradeSound();
 
   if (def.id === 'tesla') {
@@ -1796,7 +1831,7 @@ class EnemyBullet {
     this.y = y;
     this.radius = radius;
     this.color = color;
-    this.specialTag = specialTag; // 'DOOMSDAY' | 'HEAVY' | 'BLUE_POLARITY'
+    this.specialTag = specialTag; // 'DOOMSDAY' | 'HEAVY' | 'PERILOUS' | 'BLUE_POLARITY'
     const dx = targetX - x;
     const dy = targetY - y;
     const d = Math.hypot(dx, dy) || 1;
@@ -1804,11 +1839,13 @@ class EnemyBullet {
     this.vy = (dy / d) * speed;
     this.isDead = false;
     this.isParried = false;
+    this.pulseTimer = 0;
   }
 
   update(dt, timeScale) {
     this.x += this.vx * timeScale;
     this.y += this.vy * timeScale;
+    this.pulseTimer += dt;
 
     if (this.x < -100 || this.x > canvas.width + 100 || this.y < -100 || this.y > canvas.height + 100) {
       this.isDead = true;
@@ -1847,7 +1884,7 @@ class EnemyBullet {
         if (distToBoss < 210) {
           const hitBx = currentBoss.x;
           const hitBy = currentBoss.y;
-          const dmg = this.specialTag === 'DOOMSDAY' ? 28 : (unlockState.plasmaParry ? 35 : 18);
+          const dmg = this.specialTag === 'DOOMSDAY' ? 28 : (this.specialTag === 'PERILOUS' ? 36 : (unlockState.plasmaParry ? 35 : 18));
           const checkX = distToBoss < 75 ? hitBx : this.x;
           const checkY = distToBoss < 75 ? hitBy : this.y;
           if (currentBoss.onHit(checkX, checkY, dmg, true, this)) {
@@ -1862,9 +1899,19 @@ class EnemyBullet {
       return;
     }
 
-    // 撞擊玩家防線
+    // 撞擊玩家防線 (隻狼「危」字攻擊檢測)
     if (this.y > canvas.height * 0.72) {
-      if (this.specialTag === 'DOOMSDAY') {
+      if (this.specialTag === 'PERILOUS') {
+        // 🩸 隻狼式「危」字投擲重砲：絕對不可開盾硬擋！硬擋直接粉碎護盾扣大血！
+        if (isShieldActive) {
+          shieldEnergy = 0;
+          isShieldActive = false;
+          shieldBreakCooldown = 3.5;
+          sfx.playShieldBreak();
+          spawnFloatingText('💥 蠢蛋！「危」字攻擊無法防禦！護盾粉碎！', canvas.width * 0.5, canvas.height * 0.6, '#ff0033');
+        }
+        applyDamage(35);
+      } else if (this.specialTag === 'DOOMSDAY') {
         // 滅世天罰巨球無視普通護盾，逼迫彈反！
         if (isShieldActive) {
           shieldEnergy = 0;
@@ -1900,6 +1947,34 @@ class EnemyBullet {
       ctx.beginPath();
       ctx.arc(0, 0, this.radius * 0.5, 0, Math.PI * 2);
       ctx.fill();
+    } else if (this.specialTag === 'PERILOUS') {
+      // 🩸 隻狼式「危」字不可防攻擊 (血紅暗炎光環 ＋ 鮮紅大「危」字警告)
+      const pulse = Math.sin(this.pulseTimer * 12) * 5;
+      ctx.strokeStyle = '#ff0033';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius + 6 + pulse, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255, 0, 50, 0.45)';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius + 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#8b0000';
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff0033';
+      ctx.font = '900 18px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('危', 0, -1);
+
+      ctx.font = '900 9px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('不可防！彈反或打斷！', 0, this.radius + 13);
     } else if (this.specialTag === 'DOOMSDAY') {
       // ☀️ 滅世天罰巨球 (雙環旋轉日冕 + 強制彈反提示)
       const pulse = Math.sin(Date.now() * 0.015) * 4;
@@ -1973,13 +2048,14 @@ class CyberDreadnought {
     this.rightCore = { relX: this.width * 0.36, relY: 4, hp: 26, maxHp: 26, radius: 26, alive: true, recoil: 0 };
     this.mainReactor = { relX: 0, relY: 16, hp: 85, maxHp: 85, radius: 34, alive: true };
 
-    // 二階段：毀滅死光狀態機 ('IDLE' | 'CHARGING' | 'FIRING' | 'OVERHEAT')
+    // 二階段：毀滅死光狀態機 ('IDLE' | 'CHARGING' | 'FEINT' | 'FIRING' | 'OVERHEAT')
     this.phase2Hp = 160;
     this.phase2MaxHp = 160;
     this.laserState = 'IDLE';
     this.laserTimer = 0;
     this.shieldedBeamTime = 0;
     this.beamTickTimer = 0;
+    this.isFeint = false;
   }
 
   triggerPhase2() {
@@ -2073,19 +2149,38 @@ class CyberDreadnought {
           this.laserState = 'CHARGING';
           this.laserTimer = 0;
           this.shieldedBeamTime = 0;
+          // 😈 惡意快慢刀假動作：40% 機率是「假快放真慢刀 (FEINT)」，停頓騙玩家張手開盾過熱！
+          this.isFeint = Math.random() < 0.42;
           sfx.playAlertBeep();
-          spawnFloatingText('⚠️ 主砲死光聚能！張開五指 [✋] 防禦！', this.x, this.y + 55, '#ffee00');
+          spawnFloatingText(this.isFeint ? '⚠️ [警告] 能量讀數異常？！' : '⚠️ 主砲死光聚能！張開五指 [✋] 防禦！', this.x, this.y + 55, '#ffee00');
         }
       } else if (this.laserState === 'CHARGING') {
         // 聚能期間緩慢對準畫面中央
         this.x += (canvas.width * 0.5 - this.x) * 0.04 * timeScale;
         if (Math.random() < 0.25) sfx.playAlertBeep();
         if (this.laserTimer > 2.0) {
+          if (this.isFeint) {
+            // 進入快慢刀假動作僵直：突然停止轟炸停滯 1.2 秒，專抓護盾提早開完過熱的空檔！
+            this.laserState = 'FEINT';
+            this.laserTimer = 0;
+            spawnFloatingText('❓ 熄火假動作！別提前開盾！', this.x, this.y + 50, '#ff9900');
+          } else {
+            this.laserState = 'FIRING';
+            this.laserTimer = 0;
+            this.beamTickTimer = 0;
+            sfx.playRailgunBlast();
+            screenShake = 20;
+          }
+        }
+      } else if (this.laserState === 'FEINT') {
+        // 假動作停頓 1.2 秒，等玩家張開護盾把能量消耗殆盡後，突然狂暴轟出！
+        if (this.laserTimer > 1.2) {
           this.laserState = 'FIRING';
           this.laserTimer = 0;
           this.beamTickTimer = 0;
           sfx.playRailgunBlast();
-          screenShake = 20;
+          screenShake = 24;
+          spawnFloatingText('💥 靠！快慢刀暗算！死光轟擊！', this.x, this.y + 50, '#ff0033');
         }
       } else if (this.laserState === 'FIRING') {
         screenShake = 8;
@@ -2139,9 +2234,10 @@ class CyberDreadnought {
     const isP2 = this.currentPhase === 2;
 
     // 0. 二階段毀滅死光預警線與巨型光束 (零 shadowBlur 多層疊加)
-    if (isP2 && this.laserState === 'CHARGING') {
-      const chargePct = Math.min(1, this.laserTimer / 2.0);
-      ctx.strokeStyle = 'rgba(255, 0, 85, 0.55)';
+    if (isP2 && (this.laserState === 'CHARGING' || this.laserState === 'FEINT')) {
+      const isFeint = this.laserState === 'FEINT';
+      const chargePct = isFeint ? 1.0 : Math.min(1, this.laserTimer / 2.0);
+      ctx.strokeStyle = isFeint ? 'rgba(255, 170, 0, 0.75)' : 'rgba(255, 0, 85, 0.55)';
       ctx.lineWidth = 2 + chargePct * 6;
       ctx.setLineDash([12, 8]);
       ctx.beginPath();
@@ -2150,12 +2246,12 @@ class CyberDreadnought {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // 艦首聚能球
-      ctx.fillStyle = 'rgba(255, 50, 0, 0.35)';
+      // 艦首聚能球 (假動作時劇烈抖動閃紅)
+      ctx.fillStyle = isFeint ? 'rgba(255, 150, 0, 0.5)' : 'rgba(255, 50, 0, 0.35)';
       ctx.beginPath();
-      ctx.arc(0, 26, 14 + chargePct * 24, 0, Math.PI * 2);
+      ctx.arc(0, 26, 14 + chargePct * 24 + (isFeint ? Math.sin(Date.now() * 0.05) * 4 : 0), 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ffee00';
+      ctx.fillStyle = isFeint ? '#ff3300' : '#ffee00';
       ctx.beginPath();
       ctx.arc(0, 26, 6 + chargePct * 10, 0, Math.PI * 2);
       ctx.fill();
@@ -2608,14 +2704,16 @@ class MechaArachnid {
           spawnFloatingText('🕷️ 巨蛛俯衝！準備彈反毒針或霰彈 [✌️] 轟擊！', this.x, this.y + 40, '#ffea00');
         }
       } else if (this.lungeState === 'LUNGE_DOWN') {
-        // 順著蛛絲急速下墜貼臉
+        // 順著蛛絲急速下墜貼臉，並射出血紅「危」字穿甲毒針！
         const lungeTargetY = canvas.height * 0.36;
         this.y += (lungeTargetY - this.y) * 0.12 * timeScale;
         if (this.lungeTimer > 1.1 && this.lungeTimer < 1.25) {
           this.lungeTimer = 1.26;
           sfx.playBossLaser();
           if (enemyBullets.length < 18) {
-            enemyBullets.push(new EnemyBullet(this.x, this.y + 28, canvas.width * 0.5, canvas.height * 0.75, 3.1, '#00ff88', 18, 'HEAVY'));
+            // 🩸 惡意「危」字投擲技：不可開盾硬擋！
+            enemyBullets.push(new EnemyBullet(this.x, this.y + 28, canvas.width * 0.5, canvas.height * 0.75, 3.2, '#ff0033', 18, 'PERILOUS'));
+            spawnFloatingText('🩸 危！巨蛛毒針不可防！必須彈反！', this.x, this.y + 50, '#ff0033');
           }
         }
         if (this.lungeTimer > 2.4) {
