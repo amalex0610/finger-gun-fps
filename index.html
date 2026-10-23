@@ -65,30 +65,33 @@
     .top-floating-bar {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       width: 100%;
     }
 
-    /* 左側極簡卡片 (移除 backdrop-filter 避免 iOS 每幀高斯模糊重繪卡頓) */
+    /* 左側極簡卡片 (緊湊橫向膠囊佈局，釋放頂部縱向高度) */
     .left-status-group {
       display: flex;
-      flex-direction: column;
-      gap: 5px;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      max-width: 78%;
     }
 
     .hp-and-score-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(8, 12, 24, 0.88);
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid rgba(0, 240, 255, 0.3);
+      gap: 6px;
+      background: rgba(8, 12, 24, 0.92);
+      padding: 3px 8px;
+      border-radius: 18px;
+      border: 1px solid rgba(0, 240, 255, 0.35);
     }
 
     .hp-bar-bg {
-      width: 50px;
-      height: 8px;
+      width: 44px;
+      height: 7px;
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
       overflow: hidden;
@@ -102,8 +105,8 @@
     }
 
     .shield-bar-bg {
-      width: 44px;
-      height: 8px;
+      width: 38px;
+      height: 7px;
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
       overflow: hidden;
@@ -118,7 +121,7 @@
     }
 
     .score-display {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
       color: #ffdd00;
       letter-spacing: 0.5px;
@@ -128,9 +131,9 @@
       display: inline-block;
       background: #ff3300;
       color: #fff;
-      padding: 1px 6px;
+      padding: 1px 5px;
       border-radius: 4px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 900;
       transform: scale(0);
     }
@@ -138,23 +141,23 @@
       transform: scale(1);
     }
 
-    /* 武器與技能解鎖進度列 (極簡通透，不佔視野) */
+    /* 武器與技能解鎖進度列 (極簡通透橫排) */
     .weapon-rack {
       display: flex;
-      gap: 5px;
-      margin-top: 3px;
+      gap: 4px;
+      margin-top: 0;
     }
     .rack-slot {
       position: relative;
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      background: rgba(10, 16, 30, 0.85);
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: rgba(10, 16, 30, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 11px;
       opacity: 0.35;
       user-select: none;
     }
@@ -178,20 +181,20 @@
       display: none;
     }
 
-    /* 已裝備肉鴿晶片固定槽位 (絕不遮擋視野) */
+    /* 已裝備肉鴿晶片固定槽位 (橫向緊湊排列) */
     .perks-inventory {
       display: flex;
-      gap: 6px;
-      margin-top: 3px;
+      gap: 4px;
+      margin-top: 0;
     }
 
     .perk-slot {
-      background: rgba(10, 16, 30, 0.85);
+      background: rgba(10, 16, 30, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.15);
       color: rgba(255, 255, 255, 0.4);
-      padding: 2px 7px;
-      border-radius: 8px;
-      font-size: 11px;
+      padding: 1px 5px;
+      border-radius: 6px;
+      font-size: 10px;
       font-weight: 800;
     }
 
@@ -211,6 +214,30 @@
       border-color: #ff00aa;
       color: #ff00aa;
       background: rgba(65, 0, 45, 0.88);
+    }
+
+    /* 🛡️ 戰術戰況情報旗標列 (Tactical Intel Banner) - 絕對不被頂部 HUD 遮擋且字體清晰 */
+    #boss-tactical-intel {
+      position: absolute;
+      top: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 92%;
+      max-width: 440px;
+      background: rgba(4, 8, 18, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.6);
+      border-radius: 8px;
+      padding: 5px 10px;
+      color: #ffea00;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.35;
+      letter-spacing: 0.5px;
+      z-index: 25;
+      box-sizing: border-box;
+      pointer-events: none;
+      display: none;
     }
 
     /* 右側微型圖示按鈕 */
@@ -407,6 +434,9 @@
 
   <!-- BOSS 登場全螢幕警告橫幅 -->
   <div id="boss-warning-banner">⚠️ WARNING: CYBER DREADNOUGHT BOSS ⚠️</div>
+
+  <!-- 🛡️ 戰術戰況情報旗標列 (置於頂部正中央獨立展示，保證絕不遮擋任何機制) -->
+  <div id="boss-tactical-intel"></div>
 
   <!-- 極簡全通透 HUD 資訊列 -->
   <div id="hud">
@@ -1153,6 +1183,7 @@ const rackShotgunElem = document.getElementById('rack-shotgun');
 const rackShieldElem = document.getElementById('rack-shield');
 const rackMinigunElem = document.getElementById('rack-minigun');
 const rackRailgunElem = document.getElementById('rack-railgun');
+const bossIntelElem = document.getElementById('boss-tactical-intel');
 
 // DOM 髒檢查快取 (Dirty-Checking Cache)，徹底避免每幀寫入 DOM 觸發 iOS WebKit Style Recalc 與 Layout Reflow
 let _lastStatusReady = null;
@@ -1161,8 +1192,26 @@ let _lastRackSignature = '';
 let _lastShieldPct = -1;
 let _lastShieldBg = '';
 let _lastChronoSec = -1;
+let _lastBossIntelMsg = '';
 let _bannerTimer = null;
 let _bossSpawnTimer = null;
+
+function setBossTacticalIntel(msg) {
+  if (!bossIntelElem) return;
+  if (!msg) {
+    if (_lastBossIntelMsg !== '') {
+      _lastBossIntelMsg = '';
+      bossIntelElem.style.display = 'none';
+      bossIntelElem.innerText = '';
+    }
+    return;
+  }
+  if (_lastBossIntelMsg !== msg) {
+    _lastBossIntelMsg = msg;
+    bossIntelElem.innerText = msg;
+    bossIntelElem.style.display = 'block';
+  }
+}
 
 function setHudStatus(isReady, msg) {
   if (_lastStatusReady !== isReady) {
@@ -1828,6 +1877,7 @@ function destroyBossReal() {
   const phase = bossPhase;
   currentBoss = null;
   fakeDeathState = 'NONE';
+  setBossTacticalIntel('');
   sealedWeapon = null;
   sealTimer = 0;
   cameraSplatterTimer = 0;
@@ -1885,6 +1935,7 @@ function destroyBossReal() {
 
 function triggerGameVictory() {
   isGameOver = true;
+  setBossTacticalIntel('');
   sfx.stopBgm();
   sfx.playUnlock();
   screenShake = 30;
@@ -2459,10 +2510,7 @@ class CyberDreadnought {
       }
 
       const shieldActive = this.leftCore.alive || this.rightCore.alive;
-      ctx.fillStyle = shieldActive ? '#00f0ff' : '#ffea00';
-      ctx.font = '900 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(shieldActive ? '🛡️ 裝甲鎖死 (先破雙翼或彈反重砲)' : '🎯 閘門洞開！集中狙擊核心！', mx, my + r + 15);
+      setBossTacticalIntel(shieldActive ? '🛡️ 母艦裝甲鎖死 (先擊破左右雙翼或開槍彈反重砲)' : '🎯 裝甲閘門洞開！集中狙擊赤紅核心！');
 
       // 頂部血條
       ctx.fillStyle = 'rgba(0,0,0,0.65)';
@@ -2471,10 +2519,6 @@ class CyberDreadnought {
       const maxTotal = this.leftCore.maxHp + this.rightCore.maxHp + this.mainReactor.maxHp;
       ctx.fillStyle = '#00f0ff';
       ctx.fillRect(-w * 0.4, -h * 0.5 - 22, (w * 0.8) * Math.max(0, totalHp / maxTotal), 9);
-
-      ctx.fillStyle = '#fff';
-      ctx.font = '900 10px sans-serif';
-      ctx.fillText('CYBER DREADNOUGHT · PHASE 1/2', 0, -h * 0.5 - 26);
     } else {
       // 二階段核心繪製
       const isOverheat = this.laserState === 'OVERHEAT';
@@ -2498,13 +2542,11 @@ class CyberDreadnought {
       ctx.fillStyle = isOverheat ? '#00ff88' : '#ff0033';
       ctx.fillRect(-w * 0.4, -h * 0.5 - 22, (w * 0.8) * Math.max(0, this.phase2Hp / this.phase2MaxHp), 9);
 
-      ctx.fillStyle = isOverheat ? '#00ff88' : '#ffdd00';
-      ctx.font = '900 11px sans-serif';
-      ctx.textAlign = 'center';
-      let stateTag = '⚠️ SIEGE MODE · PHASE 2/2 ⚠️';
-      if (this.laserState === 'CHARGING') stateTag = '🚨 死光聚能中！快張開五指 [✋] 開護盾！';
-      else if (this.laserState === 'OVERHEAT') stateTag = '🔥 過熱癱瘓中 (300% 暴擊傷害)！快開火！';
-      ctx.fillText(stateTag, 0, -h * 0.5 - 26);
+      let stateTag = '⚠️ SIEGE MODE · 攻城死光模式！';
+      if (this.laserState === 'CHARGING') stateTag = '🚨 死光聚能中！準備張開五指 [✋] 護盾硬扛！';
+      else if (this.laserState === 'FEINT') stateTag = '❓ 停頓假動作！別太早開盾耗光能量！';
+      else if (this.laserState === 'OVERHEAT') stateTag = '🔥 過熱大癱瘓 (300% 暴擊)！全火力傾瀉！';
+      setBossTacticalIntel(stateTag);
     }
 
     ctx.restore();
@@ -2921,12 +2963,8 @@ class MechaArachnid {
       ctx.fillStyle = '#00ff88';
       ctx.fillRect(-75, -this.radius - 38, 150 * Math.max(0, this.phase1Hp / this.phase1MaxHp), 8);
 
-      ctx.fillStyle = '#fff';
-      ctx.font = '900 10px sans-serif';
-      ctx.textAlign = 'center';
-      const label = isImmune ? `🛡️ 核心無敵！先擊斷機械步足 (${aliveLegCount}/4)` : '⚠️ 步足全斷！狂轟中央複眼！';
-      ctx.fillText(label, 0, this.radius + 26);
-      ctx.fillText('VOID MECHA-ARACHNID · PHASE 1/2', 0, -this.radius - 42);
+      const label = isImmune ? `🛡️ 巨蛛複眼無敵！先斬斷外圍機械步足 (${aliveLegCount}/4)！` : '🎯 步足全斷！全力轟擊中央複眼！';
+      setBossTacticalIntel(label);
     } else {
       // 二階段：6 根狂暴電漿鐮刀腿
       const legAngles = [-125, -92, -58, 58, 92, 125];
@@ -2983,11 +3021,8 @@ class MechaArachnid {
       ctx.fillStyle = '#ff00aa';
       ctx.fillRect(-75, -62, 150 * Math.max(0, this.phase2Hp / this.phase2MaxHp), 8);
 
-      ctx.fillStyle = '#ffdd00';
-      ctx.font = '900 11px sans-serif';
-      ctx.textAlign = 'center';
-      const p2Tag = this.lungeState === 'STUNNED' ? '💫 巨蛛墜落暈眩中！全力暴擊！' : '⚠️ APOCALYPSE ARACHNID · PHASE 2/2 ⚠️';
-      ctx.fillText(p2Tag, 0, -68);
+      const p2Tag = this.lungeState === 'STUNNED' ? '💫 巨蛛墜落暈眩破防中！全力暴擊！' : '⚠️ 巨蛛懸吊俯衝！開盾無效，準備【雙指霰彈 ✌️】或彈反打斷！';
+      setBossTacticalIntel(p2Tag);
     }
 
     ctx.restore();
@@ -3266,11 +3301,7 @@ class OuroborosCore {
       ctx.lineWidth = 1;
       ctx.strokeRect(-85, -this.radius - 36, 170, 8);
 
-      ctx.fillStyle = '#00f0ff';
-      ctx.font = '900 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('OUROBOROS CELESTIAL CORE · PHASE 1/2', 0, -this.radius - 42);
-      ctx.fillText('🎯 瞄準旋轉護盾空隙射擊，或用軌道砲貫穿！', 0, this.radius + 38);
+      setBossTacticalIntel('🎯 瞄準旋轉天體護盾的【空隙】開火，或切換軌道砲 [⚡] 直接貫穿！');
     } else {
       // 1. 吸積盤引力漩渦 (零 createRadialGradient，改用同心多邊形與幾何旋臂)
       ctx.save();
@@ -3316,17 +3347,10 @@ class OuroborosCore {
       ctx.lineWidth = 1;
       ctx.strokeRect(-90, -this.radius - 36, 180, 8);
 
-      ctx.fillStyle = '#ffea00';
-      ctx.font = '900 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('⚠️ SUPERNOVA SINGULARITY · PHASE 2/2 ⚠️', 0, -this.radius - 42);
-      if (this.stunTimer > 0) {
-        ctx.fillStyle = '#00ffaa';
-        ctx.fillText(`🔥 奇點崩潰破防中 (${this.stunTimer.toFixed(1)}s)！全火力傾瀉！`, 0, this.radius + 42);
-      } else {
-        ctx.fillStyle = '#ff5577';
-        ctx.fillText('🛡️ 事件視界減傷 75%！完美彈反 ✋ 紅黑重力球破防！', 0, this.radius + 42);
-      }
+      const p2Msg = this.stunTimer > 0
+        ? `🔥 奇點崩潰破防中 (${this.stunTimer.toFixed(1)}s)！全火力傾瀉！`
+        : '🛡️ 事件視界減傷75%！開槍或張掌 [✋] 彈反紅黑天罰球使其破防！';
+      setBossTacticalIntel(p2Msg);
     }
 
     ctx.restore();
@@ -3687,12 +3711,12 @@ class SaucerPrime {
       }
     }
 
-    // 頂部血條與機制提示
+    // 頂部血條與機制提示 (同步更新獨立置頂的戰術情報條，徹底告別文字被 HUD/BOSS 遮擋)
     const hpPct = this.currentPhase === 1 ? (this.phase1Hp / this.phase1MaxHp) : (this.phase2Hp / this.phase2MaxHp);
     const barW = 160;
     const barH = 8;
     const bx = canvas.width * 0.5;
-    const by = 52;
+    const by = 48;
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fillRect(bx - barW / 2, by, barW, barH);
     ctx.fillStyle = this.currentPhase === 1 ? '#00f0ff' : '#ffea00';
@@ -3701,17 +3725,15 @@ class SaucerPrime {
     ctx.lineWidth = 1;
     ctx.strokeRect(bx - barW / 2, by, barW, barH);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
+    let msg = '';
     if (this.currentPhase === 1) {
-      const msg = this.crashedTimer > 0
-        ? `💥 陀螺儀全毀墜機中 (${this.crashedTimer.toFixed(1)}s)！暴擊核心！`
+      msg = this.crashedTimer > 0
+        ? `💥 陀螺儀全毀墜機中 (${this.crashedTimer.toFixed(1)}s)！狂轟中央核心！`
         : '🛸 優先擊毀外環 4 顆【菱形反重力陀螺儀】使其墜機破防！';
-      ctx.fillText(msg, bx, by - 6);
     } else {
-      ctx.fillText('🌀 認準【逆時針金核】真身射擊！誤射紫核假身將遭電擊！', bx, by - 6);
+      msg = '🌀 認準【逆時針旋轉 · 金核】真身射擊！誤射紫核分身遭電擊！';
     }
+    setBossTacticalIntel(msg);
   }
 
   onHit(tx, ty, damage, isParry = false) {
@@ -3965,13 +3987,8 @@ class GeminiOrbiters {
       ctx.fillStyle = '#ff3300';
       ctx.fillRect(p2x - 26, p2y - 36, 52 * Math.max(0, this.betaHp / this.betaMaxHp), 6);
 
-      ctx.fillStyle = this.isImbalanced ? '#00ff88' : '#ffffff';
-      ctx.font = '900 10px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        this.isImbalanced ? '⚠️ 雙星血量失衡！正在互相輸血回血！請換目標射擊！' : '⚖️ 保持冰火雙星血量平衡 (差距<28%) 同時擊破！',
-        this.x,
-        this.y - 52
+      setBossTacticalIntel(
+        this.isImbalanced ? '⚠️ 雙星血量失衡！正在互相輸血回血！請換目標射擊！' : '⚖️ 保持冰火雙星血量平衡 (差距<28%) 同時擊破！'
       );
     } else {
       ctx.translate(this.x, this.y);
@@ -4005,13 +4022,8 @@ class GeminiOrbiters {
       ctx.fillStyle = isBlue ? '#00f0ff' : '#ff3300';
       ctx.fillRect(-barW / 2, -58, barW * Math.max(0, this.phase2Hp / this.phase2MaxHp), 8);
 
-      ctx.fillStyle = isBlue ? '#00f0ff' : '#ffea00';
-      ctx.font = '900 11px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(
-        isBlue ? '🔵 【極光藍：吸收態】禁止開火！✋ 彈反藍球破防！' : '🔴 【烈陽紅：暴露態】全力開火傾瀉傷害！',
-        0,
-        -66
+      setBossTacticalIntel(
+        isBlue ? '🔵 【極光藍：吸收態】禁止開火！✋ 彈反藍球破防！' : '🔴 【烈陽紅：暴露態】全力開火傾瀉傷害！'
       );
     }
     ctx.restore();
@@ -4320,19 +4332,16 @@ class PrismTitan {
     ctx.lineWidth = 1;
     ctx.strokeRect(this.x - barW / 2, this.y - 64, barW, barH);
 
-    ctx.fillStyle = mainColor;
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
     if (this.currentPhase === 1) {
       const tag = this.shatterTimer > 0
         ? `💥 鏡面崩解破防中 (${this.shatterTimer.toFixed(1)}s)！全力狙擊本體！`
         : '💎 先擊碎外圍 3 顆【菱形折射衛星】！直接射本體將遭反射！';
-      ctx.fillText(tag, this.x, this.y - 70);
+      setBossTacticalIntel(tag);
     } else {
       let specTag = '🔵 鈷藍光譜：請用【單指手槍 / 軌道砲 👉】射擊！';
       if (this.spectrum === 'ORANGE') specTag = '🟠 熾橘光譜：請比【雙指霰彈 ✌️】轟擊！';
       else if (this.spectrum === 'YELLOW') specTag = '🟡 暴風黃光譜：請用【加特林連射 🌪️ 或 彈反】攻擊！';
-      ctx.fillText(specTag, this.x, this.y - 70);
+      setBossTacticalIntel(specTag);
     }
   }
 
@@ -4674,19 +4683,16 @@ class PhantomFalcon {
     ctx.lineWidth = 1;
     ctx.strokeRect(this.x - barW / 2, this.y - 54, barW, barH);
 
-    ctx.fillStyle = '#00ff88';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
     if (this.currentPhase === 1) {
       const msg = this.groundedTimer > 0
         ? `💥 渦輪全毀失速中 (${this.groundedTimer.toFixed(1)}s)！全力掃射機腹！`
         : '🦅 機身光學隱身中！優先狙擊左右發光的【雙翼渦輪引擎】！';
-      ctx.fillText(msg, this.x, this.y - 60);
+      setBossTacticalIntel(msg);
     } else {
       const msg2 = (this.flareRevealTimer > 0 || this.swoopState === 'STUNNED')
         ? '🔥 迷彩燒穿顯形中！全火力傾瀉！！'
         : '👻 幽靈迷彩中！彈反【橘紅汽油彈】點亮真身，或開盾 ✋ 擋俯衝！';
-      ctx.fillText(msg2, this.x, this.y - 60);
+      setBossTacticalIntel(msg2);
     }
   }
 
@@ -5004,19 +5010,16 @@ class HellforgeMech {
     ctx.lineWidth = 1;
     ctx.strokeRect(this.x - barW / 2, this.y - 68, barW, barH);
 
-    ctx.fillStyle = isVulnerable ? '#00f0ff' : '#ffea00';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
     if (this.currentPhase === 1) {
       const msg = this.cooledTimer > 0
         ? `❄️ 裝甲冷卻脆裂中 (${this.cooledTimer.toFixed(1)}s)！250% 暴擊胸口爐心！`
         : '🌋 白熱裝甲減傷 80%！優先擊爆雙肩黃色【高壓散熱排氣閥】！';
-      ctx.fillText(msg, this.x, this.y - 74);
+      setBossTacticalIntel(msg);
     } else {
       const msg2 = this.meltdownTimer > 0
         ? `💥 爐心內爆癱瘓中 (${this.meltdownTimer.toFixed(1)}s)！全力傾瀉火力！`
         : '☄️ 完美彈反 ✋【地核熔岩隕石】砸進胸口熔爐引發內爆！';
-      ctx.fillText(msg2, this.x, this.y - 74);
+      setBossTacticalIntel(msg2);
     }
   }
 
@@ -5317,20 +5320,13 @@ class CyberKraken {
     ctx.lineWidth = 1;
     ctx.strokeRect(this.x - barW / 2, this.y - 62, barW, barH);
 
-    ctx.fillStyle = '#e879f9';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
     if (this.currentPhase === 1) {
-      ctx.fillText(
-        anyArmAlive ? '🦑 主眼裝甲緊閉！先斬斷下方 4 條【發光觸手尖端】！' : '🎯 4 觸手全斷！集中火力轟擊深淵主眼！',
-        this.x,
-        this.y - 68
+      setBossTacticalIntel(
+        anyArmAlive ? '🦑 主眼裝甲緊閉！先斬斷下方 4 條【發光觸手尖端】！' : '🎯 4 觸手全斷！集中火力轟擊深淵主眼！'
       );
     } else {
-      ctx.fillText(
-        this.mouthStunTimer > 0 ? `💥 巨口炸裂破防中 (${this.mouthStunTimer.toFixed(1)}s)！300% 暴擊！` : '💣 完美彈反 ✋【深水量子雷】炸入深淵巨口破防！',
-        this.x,
-        this.y - 68
+      setBossTacticalIntel(
+        this.mouthStunTimer > 0 ? `💥 巨口炸裂破防中 (${this.mouthStunTimer.toFixed(1)}s)！300% 暴擊！` : '💣 完美彈反 ✋【深水量子雷】炸入深淵巨口破防！'
       );
     }
   }
@@ -5751,15 +5747,10 @@ class OmniDeus {
     ctx.lineWidth = 1.2;
     ctx.strokeRect(this.x - barW / 2, this.y - 72, barW, barH);
 
-    ctx.fillStyle = '#ffee00';
-    ctx.font = '900 10px sans-serif';
-    ctx.textAlign = 'center';
     if (this.currentPhase === 1) {
       const anySeal = this.seals.some(item => item.alive);
-      ctx.fillText(
-        anySeal ? '👑 絕對神域無敵中！先擊碎環繞的 4 座【法則聖印柱】！' : '🎯 四象聖印全破！全力轟擊全知之眼！',
-        this.x,
-        this.y - 78
+      setBossTacticalIntel(
+        anySeal ? '👑 絕對神域無敵中！先擊碎環繞的 4 座【法則聖印柱】！' : '🎯 四象聖印全破！全力轟擊全知之眼！'
       );
     } else {
       let msg = '👑 創世萬象神 · 準備迎接三連神罰試煉！';
@@ -5767,7 +5758,7 @@ class OmniDeus {
       else if (this.trialState === 'TRIAL_ORB') msg = '☄️ 【第二神罰】完美彈反 [⚔️] 黃金奇點球轟回神核！';
       else if (this.trialState === 'TRIAL_STIGMATA') msg = '🪽 【第三神罰】快開槍射爆翼上 3 枚【赤紅聖痕靶心】斷招！';
       else if (this.trialState === 'GOD_SHATTERED') msg = `🔥 神格崩潰破防中 (${(4.5 - this.trialTimer).toFixed(1)}s)！300% 終極暴擊！`;
-      ctx.fillText(msg, this.x, this.y - 78);
+      setBossTacticalIntel(msg);
     }
   }
 
@@ -5936,6 +5927,7 @@ function updateShieldUI() {
 
 function triggerGameOver() {
   isGameOver = true;
+  setBossTacticalIntel('');
   sfx.stopBgm();
 
   sufferingStats.totalDeaths++;
@@ -5973,6 +5965,7 @@ function triggerGameOver() {
 
 function restartGame() {
   if (_bossSpawnTimer) clearTimeout(_bossSpawnTimer);
+  setBossTacticalIntel('');
   currentHp = maxHp;
   score = 0;
   killCount = 0;
@@ -7197,19 +7190,19 @@ function gameLoop() {
       ctx.restore();
     }
 
-    // B. 手勢封印禁令 HUD (頂部中央警告)
+    // B. 手勢封印禁令 HUD (位於情報列下方，確保不遮擋)
     if (sealedWeapon) {
       ctx.save();
-      ctx.fillStyle = 'rgba(255, 0, 50, 0.85)';
-      ctx.fillRect(canvas.width * 0.5 - 130, 68, 260, 30);
+      ctx.fillStyle = 'rgba(255, 0, 50, 0.88)';
+      ctx.fillRect(canvas.width * 0.5 - 130, 92, 260, 25);
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(canvas.width * 0.5 - 130, 68, 260, 30);
+      ctx.strokeRect(canvas.width * 0.5 - 130, 92, 260, 25);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 12px sans-serif';
+      ctx.font = '900 11px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(`🚫 禁令：禁用【${sealedWeapon === 'PISTOL' ? '單指手槍' : '雙指霰彈'}】(${sealTimer.toFixed(1)}s)`, canvas.width * 0.5, 88);
+      ctx.fillText(`🚫 禁令：禁用【${sealedWeapon === 'PISTOL' ? '單指手槍' : '雙指霰彈'}】(${sealTimer.toFixed(1)}s)`, canvas.width * 0.5, 109);
       ctx.restore();
     }
 
