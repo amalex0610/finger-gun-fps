@@ -1291,6 +1291,17 @@ let bossPhase = 0;
 let bossTriggered = false;
 let nextSpawnTime = 0;
 
+// 😈 第二步惡意系統變數：手勢封印懲罰、鏡頭賽博黏液污漬、假死反撲狀態
+let sealedWeapon = null;      // 'PISTOL' | 'SHOTGUN' (被 BOSS 電磁鎖定禁止的手勢，開火即膛炸自傷！)
+let sealTimer = 0;            // 封印剩餘時間
+let cameraSplatterTimer = 0;  // 鏡頭噴濺黑色油污剩餘時間
+let fakeDeathArmed = false;   // 本場戰鬥是否保留一次假死反撲機會
+let fakeDeathState = 'NONE';  // 'NONE' | 'SLOWMO_CHEER' | 'KAMIKAZE_RUSH'
+let fakeDeathTimer = 0;
+let fakeDeathX = 0;
+let fakeDeathY = 0;
+let fakeDeathHp = 0;
+
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -1735,6 +1746,11 @@ function checkTechTreeAndBoss() {
 // ⚠️ 觸發 BOSS 戰 (根據階段派發 10 大傳奇 BOSS)
 function triggerBossFight() {
   bossTriggered = true;
+  fakeDeathArmed = true; // 每場 BOSS 戰裝填一次假死反撲機會
+  fakeDeathState = 'NONE';
+  sealedWeapon = null;
+  sealTimer = 0;
+  cameraSplatterTimer = 0;
   screenWebs = [];
   sfx.playBossAlert();
 
@@ -1748,13 +1764,46 @@ function triggerBossFight() {
   }, 1200);
 }
 
-// 💥 摧毀 BOSS 史詩連鎖大核爆與科技解鎖 (清除全場殘留物件池，確保下一關如剛開局般絲滑)
+// 💥 摧毀 BOSS 史詩連鎖大核爆與科技解鎖 (含假死背刺惡意判定)
 function destroyBoss() {
   if (!currentBoss) return;
   const bx = currentBoss.x;
   const by = currentBoss.y;
   const phase = bossPhase;
+
+  // 😈 惡意假死機制：BOSS 2、BOSS 5、BOSS 7 初次血條歸零時觸發「假死反殺衝撞」！
+  if (fakeDeathArmed && (phase === 1 || phase === 4 || phase === 6)) {
+    fakeDeathArmed = false; // 一場戰鬥只觸發一次
+    currentBoss = null;
+    screenWebs = [];
+    enemyBullets = [];
+    lightningBolts = [];
+
+    fakeDeathState = 'SLOWMO_CHEER';
+    fakeDeathTimer = 0;
+    fakeDeathX = bx;
+    fakeDeathY = by;
+    fakeDeathHp = 32;
+
+    sfx.playExplosion();
+    screenShake = 16;
+    activePerks.bulletTimeTimer = 1.4; // 短暫假勝利慢動作
+    spawnFloatingText('🏆 BOSS DEFEATED...?', canvas.width * 0.5, canvas.height * 0.38, '#00ff88');
+    return;
+  }
+
+  destroyBossReal();
+}
+
+function destroyBossReal() {
+  const bx = fakeDeathX || (currentBoss ? currentBoss.x : canvas.width * 0.5);
+  const by = fakeDeathY || (currentBoss ? currentBoss.y : canvas.height * 0.25);
+  const phase = bossPhase;
   currentBoss = null;
+  fakeDeathState = 'NONE';
+  sealedWeapon = null;
+  sealTimer = 0;
+  cameraSplatterTimer = 0;
   screenWebs = [];
   enemyBullets = [];
   lightningBolts = [];
@@ -5819,6 +5868,12 @@ function applyDamage(amount) {
   currentHp = Math.max(0, currentHp - amount);
   updateHpUI();
 
+  // 😈 惡意命中懲罰：若受到未護盾抵擋的重擊 (>= 20 傷害)，噴射賽博黏液糊住鏡頭 3.5 秒！
+  if (amount >= 20) {
+    cameraSplatterTimer = Math.max(cameraSplatterTimer, 3.5);
+    spawnFloatingText('🩸 賽博黏液糊住鏡頭！視野受阻！', canvas.width * 0.5, canvas.height * 0.5, '#ff0055');
+  }
+
   triggerCanvasFlash('#ff0033', 0.45);
   screenShake = 20;
 
@@ -6024,6 +6079,18 @@ function executeFire(originX, originY, targetX, targetY) {
 
     if (now - lastFireTime < cooldown) return;
     lastFireTime = now;
+
+    // 🚫 惡意手勢猜拳封印檢測：若當前武器正處於 BOSS 電磁禁令中，開火即引發膛炸自傷！
+    if (sealedWeapon && currentWeapon === sealedWeapon) {
+      sfx.playHurtSound();
+      sfx.playShieldBreak();
+      screenShake = 18;
+      triggerCanvasFlash('#ff0033', 0.55);
+      applyDamage(22);
+      spawnExplosion(originX, originY, '#ff0033', 8);
+      spawnFloatingText(`🚫 犯規膛炸！禁令中強行使用 ${sealedWeapon === 'PISTOL' ? '單指手槍' : '雙指霰彈'}！-22HP`, originX, originY - 30, '#ff0033');
+      return;
+    }
 
     // 1. 音效與零重繪 Canvas 閃光 (移除高頻 navigator.vibrate IPC 呼叫以防 iOS 主執行緒阻塞)
     if (isRailgun) {
@@ -6251,6 +6318,23 @@ function executeFire(originX, originY, targetX, targetY) {
         if (unlockState.quantumEye) damage = Math.ceil(damage * 1.75);
         const didHit = currentBoss.onHit(isRailgun ? currentBoss.x : p.tx, isRailgun ? currentBoss.y : p.ty, damage, false, null);
         if (didHit) bossHitsThisShot++;
+      }
+
+      // 6.5 擊中假死突進中的 BOSS 殘骸 (生死 2.5 秒核心射擊檢定)
+      if (!pelletConsumed && fakeDeathState === 'KAMIKAZE_RUSH') {
+        const dFake = Math.hypot(p.tx - fakeDeathX, p.ty - fakeDeathY);
+        if (dFake < 75 || isRailgun) {
+          const dmg = isRailgun ? 30 : (isShotgun ? 18 : 10);
+          fakeDeathHp -= dmg;
+          sfx.playHitSound();
+          spawnExplosion(fakeDeathX, fakeDeathY, '#ffee00', 8);
+          spawnFloatingText(`💥 攔截自爆！-${dmg}`, fakeDeathX, fakeDeathY, '#ffee00');
+          if (fakeDeathHp <= 0) {
+            fakeDeathState = 'NONE';
+            destroyBossReal();
+          }
+          if (!isRailgun) break;
+        }
       }
     }
   } catch (err) {
@@ -6585,6 +6669,58 @@ function gameLoop() {
 
       if (currentBoss) {
         currentBoss.update(dt, timeScale);
+
+        // 😈 惡意手勢封印計時器：BOSS 戰進行中隨機降下「單指手槍 🚫」或「雙指霰彈 🚫」電磁鎖定！
+        if (unlockState.shotgun && !sealedWeapon && Math.random() < 0.0035) {
+          sealedWeapon = Math.random() < 0.5 ? 'PISTOL' : 'SHOTGUN';
+          sealTimer = 5.0;
+          sfx.playAlertBeep();
+          screenShake = 10;
+          spawnFloatingText(`🚫 警告！BOSS 釋放電磁封鎖！禁止使用【${sealedWeapon === 'PISTOL' ? '單指手槍' : '雙指霰彈'}】！開火將自傷！`, canvas.width * 0.5, canvas.height * 0.3, '#ff0033');
+        }
+      }
+
+      // 封印倒數
+      if (sealedWeapon) {
+        sealTimer -= dt * timeScale;
+        if (sealTimer <= 0) {
+          sealedWeapon = null;
+          spawnFloatingText('✨ 電磁禁令解除！手勢全面解鎖！', canvas.width * 0.5, canvas.height * 0.3, '#00ff88');
+        }
+      }
+
+      // 鏡頭黏液污漬倒數
+      if (cameraSplatterTimer > 0) {
+        cameraSplatterTimer -= dt * timeScale;
+      }
+
+      // 😈 惡意假死狀態機更新
+      if (fakeDeathState === 'SLOWMO_CHEER') {
+        fakeDeathTimer += dt;
+        if (fakeDeathTimer > 1.4) {
+          fakeDeathState = 'KAMIKAZE_RUSH';
+          fakeDeathTimer = 0;
+          sfx.playBossTransform();
+          screenShake = 28;
+          triggerCanvasFlash('#ff0033', 0.7);
+          spawnFloatingText('💀 靠！BOSS 沒死！光速衝撞自爆來襲！3秒內射擊核心攔截！', canvas.width * 0.5, canvas.height * 0.4, '#ff0033');
+        }
+      } else if (fakeDeathState === 'KAMIKAZE_RUSH') {
+        fakeDeathTimer += dt * timeScale;
+        // BOSS 殘骸化作狂暴赤紅火球光速俯衝向鏡頭
+        fakeDeathY += 320 * dt * timeScale;
+        fakeDeathX += Math.sin(fakeDeathTimer * 16) * 180 * dt * timeScale;
+
+        // 若撞上玩家：秒殺級 65 點直接傷害！
+        if (fakeDeathY > canvas.height * 0.72) {
+          fakeDeathState = 'NONE';
+          sfx.playExplosion();
+          screenShake = 35;
+          triggerCanvasFlash('#ff0033', 0.85);
+          applyDamage(65);
+          spawnFloatingText('💥 致命自爆直擊！-65HP！', canvas.width * 0.5, canvas.height * 0.5, '#ff0033');
+          destroyBossReal();
+        }
       }
 
       for (let i = enemyBullets.length - 1; i >= 0; i--) {
@@ -6967,6 +7103,67 @@ function gameLoop() {
 
       ctx.fillText(`${weaponLabel} · ${statusLabel}`, 0, crosshairRadius + 16);
 
+      ctx.restore();
+    }
+
+    // 9.5 繪製第二步惡意機制：假死衝撞殘骸、手勢封印警報、鏡頭油污盲打 (極輕量向量繪製，0 WebGL 負擔)
+    // A. 假死反殺衝撞殘骸 (狂暴火球核心)
+    if (fakeDeathState === 'KAMIKAZE_RUSH') {
+      ctx.save();
+      ctx.translate(fakeDeathX, fakeDeathY);
+      const pulse = Math.sin(Date.now() * 0.03) * 6;
+      ctx.fillStyle = 'rgba(255, 0, 50, 0.4)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 48 + pulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff2200';
+      ctx.beginPath();
+      ctx.arc(0, 0, 36, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffee00';
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`💀 假死反撲！射擊核心！(${fakeDeathHp}HP)`, 0, -50);
+      ctx.restore();
+    }
+
+    // B. 手勢封印禁令 HUD (頂部中央警告)
+    if (sealedWeapon) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255, 0, 50, 0.85)';
+      ctx.fillRect(canvas.width * 0.5 - 130, 68, 260, 30);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(canvas.width * 0.5 - 130, 68, 260, 30);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🚫 禁令：禁用【${sealedWeapon === 'PISTOL' ? '單指手槍' : '雙指霰彈'}】(${sealTimer.toFixed(1)}s)`, canvas.width * 0.5, 88);
+      ctx.restore();
+    }
+
+    // C. 鏡頭賽博黑色油污遮擋 (盲打考驗，單一無濾鏡半透明深黑多邊形，iPhone XR 60FPS 零負擔)
+    if (cameraSplatterTimer > 0) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(8, 12, 18, 0.88)';
+      ctx.beginPath();
+      const cx = canvas.width * 0.5;
+      const cy = canvas.height * 0.45;
+      ctx.arc(cx, cy, 110, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 0, 85, 0.9)';
+      ctx.font = '900 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⚠️ 視野受損！鏡頭糊滿黑油！⚠️', cx, cy);
       ctx.restore();
     }
 
