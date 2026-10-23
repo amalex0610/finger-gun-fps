@@ -495,12 +495,13 @@
     <button id="start-btn" class="action-btn">開啟相機 & BGM 開始挑戰</button>
   </div>
 
-  <!-- Game Over 結算視窗 -->
+  <!-- Game Over 結算視窗 (第3步惡意受苦：嘴賤墓誌銘 ＋ 受苦死因統計) -->
   <div id="game-over-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-title" style="background: linear-gradient(135deg, #ff0055, #ff5500); -webkit-background-clip: text;">SYSTEM CRITICAL</div>
-    <div class="modal-desc">陣地失守！你遭到自爆無人機劇烈撞擊！</div>
+    <div class="modal-title" style="background: linear-gradient(135deg, #ff0055, #ff5500); -webkit-background-clip: text;">💀 菜就多練 · 陣亡結算</div>
+    <div id="game-over-taunt" class="modal-desc" style="font-size:15px; color:#ffdd00; font-weight:800; min-height:44px; margin-bottom:12px; line-height:1.5;"></div>
     <div id="game-over-stats" class="game-over-stats">FINAL SCORE: 0</div>
-    <button id="restart-btn" class="action-btn">滿血重新出擊</button>
+    <div id="game-over-malice-stats" style="font-size:12px; color:#aaa; margin:10px 0 16px 0; line-height:1.8; text-align:left; background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:10px;"></div>
+    <button id="restart-btn" class="action-btn">含淚重新挑戰</button>
   </div>
 
   <!-- 🏆 Game Victory 通關視窗 -->
@@ -1291,7 +1292,7 @@ let bossPhase = 0;
 let bossTriggered = false;
 let nextSpawnTime = 0;
 
-// 😈 第二步惡意系統變數：手勢封印懲罰、鏡頭賽博黏液污漬、假死反撲狀態
+// 😈 第二步與第三步惡意系統變數：手勢封印懲罰、鏡頭賽博黏液污漬、假死反撲、嘴賤嘲諷與死相受苦統計
 let sealedWeapon = null;      // 'PISTOL' | 'SHOTGUN' (被 BOSS 電磁鎖定禁止的手勢，開火即膛炸自傷！)
 let sealTimer = 0;            // 封印剩餘時間
 let cameraSplatterTimer = 0;  // 鏡頭噴濺黑色油污剩餘時間
@@ -1301,6 +1302,31 @@ let fakeDeathTimer = 0;
 let fakeDeathX = 0;
 let fakeDeathY = 0;
 let fakeDeathHp = 0;
+
+// 📊 第三步：受苦死相統計器
+let lastDeathCause = 'DRONE'; // 'DRONE' | 'MIMIC' | 'PERILOUS' | 'FEINT' | 'SEAL_VIOLATION' | 'FAKE_DEATH'
+const sufferingStats = {
+  totalDeaths: 0,
+  mimicDeaths: 0,
+  perilousDeaths: 0,
+  feintDeaths: 0,
+  sealViolationDeaths: 0,
+  fakeDeathKills: 0
+};
+
+// 嘴賤嘲諷墓誌銘庫 (隨機挑選給玩家會心一擊)
+const TAUNT_QUOTES = [
+  "剛剛那發慢成那樣也能中？你的手指是接了 999ms 延遲嗎？",
+  "看到金色就狂射，你這貪心的下場就像被抓去電詐一樣慘。",
+  "不是，紅色的『危』字你還張開手掌去擋？隻狼老玩家都在笑了。",
+  "BOSS：『我假動作都收招了，你還開盾把能量用光，不炸你炸誰？』",
+  "手勢封印都叫你不要單指了，你那根手指是抽筋不聽使喚嗎？",
+  "以為贏了就在那邊慶祝？殘骸衝過來的時候你人傻掉了對吧？",
+  "iPhone XR 晶片表示：『幀率很穩，是我主人的反應神經太卡了。』",
+  "手指槍射擊？我看你比的比較像是投降手勢吧！",
+  "這波操作行雲流水，就是把自己送上天的過程有點太快了。",
+  "菜，就多練！別怪相機，相機很努力在追你的慢動作手指了。"
+];
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -1425,6 +1451,7 @@ function spawnPerkDrop() {
 function equipPerk(def) {
   if (def.isMimic) {
     // ☠️ 貪心懲罰：黑心詭雷自爆！扣 40HP ＋ 強制護盾過載 4 秒 ＋ 螢幕巨震！
+    lastDeathCause = 'MIMIC';
     sfx.playShieldBreak();
     sfx.playHurtSound();
     screenShake = 28;
@@ -1952,6 +1979,7 @@ class EnemyBullet {
     if (this.y > canvas.height * 0.72) {
       if (this.specialTag === 'PERILOUS') {
         // 🩸 隻狼式「危」字投擲重砲：絕對不可開盾硬擋！硬擋直接粉碎護盾扣大血！
+        lastDeathCause = 'PERILOUS';
         if (isShieldActive) {
           shieldEnergy = 0;
           isShieldActive = false;
@@ -1962,6 +1990,7 @@ class EnemyBullet {
         applyDamage(35);
       } else if (this.specialTag === 'DOOMSDAY') {
         // 滅世天罰巨球無視普通護盾，逼迫彈反！
+        lastDeathCause = 'PERILOUS';
         if (isShieldActive) {
           shieldEnergy = 0;
           isShieldActive = false;
@@ -1971,6 +2000,7 @@ class EnemyBullet {
         }
         applyDamage(25);
       } else {
+        lastDeathCause = 'DRONE';
         applyDamage(15);
       }
       spawnExplosion(this.x, this.y, this.color);
@@ -2246,6 +2276,7 @@ class CyberDreadnought {
           this.beamTickTimer += dt;
           if (this.beamTickTimer > 0.45) {
             this.beamTickTimer = 0;
+            if (this.isFeint) lastDeathCause = 'FEINT';
             applyDamage(16);
             spawnFloatingText('💥 死光直擊！快張開五指 [✋] 開盾！', canvas.width * 0.5, canvas.height * 0.55, '#ff0055');
           }
@@ -5906,7 +5937,37 @@ function updateShieldUI() {
 function triggerGameOver() {
   isGameOver = true;
   sfx.stopBgm();
-  gameOverStats.innerText = `FINAL SCORE: ${score} · KILLS: ${killCount}`;
+
+  sufferingStats.totalDeaths++;
+  if (lastDeathCause === 'MIMIC') sufferingStats.mimicDeaths++;
+  else if (lastDeathCause === 'PERILOUS') sufferingStats.perilousDeaths++;
+  else if (lastDeathCause === 'FEINT') sufferingStats.feintDeaths++;
+  else if (lastDeathCause === 'SEAL_VIOLATION') sufferingStats.sealViolationDeaths++;
+  else if (lastDeathCause === 'FAKE_DEATH') sufferingStats.fakeDeathKills++;
+
+  // 隨機抽選嘴賤嘲諷
+  const tauntElem = document.getElementById('game-over-taunt');
+  if (tauntElem) {
+    const randomTaunt = TAUNT_QUOTES[Math.floor(Math.random() * TAUNT_QUOTES.length)];
+    tauntElem.innerText = `💬 遺言嘲諷：\n「${randomTaunt}」`;
+  }
+
+  gameOverStats.innerText = `FINAL SCORE: ${score} · KILLS: ${killCount} · BOSS 階段: ${bossPhase + 1}/10`;
+
+  // 顯示受苦死因統計
+  const maliceElem = document.getElementById('game-over-malice-stats');
+  if (maliceElem) {
+    maliceElem.innerHTML = `
+      <b>📊 您的受苦生涯病歷表：</b><br>
+      • 累計暴斃骨折次數：<span style="color:#ff0055;font-weight:900;">${sufferingStats.totalDeaths}</span> 次<br>
+      • 貪心射中假晶片炸死：<span style="color:#ffaa00;">${sufferingStats.mimicDeaths}</span> 次<br>
+      • 鐵齒硬防『危』字重砲慘死：<span style="color:#ff3300;">${sufferingStats.perilousDeaths}</span> 次<br>
+      • 被快慢刀假動作騙盾過熱死：<span style="color:#ffee00;">${sufferingStats.feintDeaths}</span> 次<br>
+      • 禁令中手賤犯規膛炸自爆：<span style="color:#ff00aa;">${sufferingStats.sealViolationDeaths}</span> 次<br>
+      • 以為打贏結果被 BOSS 假死撞死：<span style="color:#00ffff;">${sufferingStats.fakeDeathKills}</span> 次
+    `;
+  }
+
   gameOverModal.style.display = 'flex';
 }
 
@@ -6082,6 +6143,7 @@ function executeFire(originX, originY, targetX, targetY) {
 
     // 🚫 惡意手勢猜拳封印檢測：若當前武器正處於 BOSS 電磁禁令中，開火即引發膛炸自傷！
     if (sealedWeapon && currentWeapon === sealedWeapon) {
+      lastDeathCause = 'SEAL_VIOLATION';
       sfx.playHurtSound();
       sfx.playShieldBreak();
       screenShake = 18;
@@ -6714,6 +6776,7 @@ function gameLoop() {
         // 若撞上玩家：秒殺級 65 點直接傷害！
         if (fakeDeathY > canvas.height * 0.72) {
           fakeDeathState = 'NONE';
+          lastDeathCause = 'FAKE_DEATH';
           sfx.playExplosion();
           screenShake = 35;
           triggerCanvasFlash('#ff0033', 0.85);
