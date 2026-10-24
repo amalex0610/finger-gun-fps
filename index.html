@@ -417,6 +417,28 @@
     .boss-select-item:active {
       transform: scale(0.96);
     }
+
+    /* 📸 賽博受苦拍立得專屬樣式 (零延遲、高對比、iPhone XR 最佳化) */
+    .polaroid-btn {
+      background: linear-gradient(135deg, #ff007f, #ff3300) !important;
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.6) !important;
+      color: #fff !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .polaroid-btn:active {
+      transform: scale(0.95);
+      box-shadow: 0 0 10px rgba(255, 0, 127, 0.4) !important;
+    }
+    #polaroid-modal {
+      background: rgba(4, 7, 16, 0.96);
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 12px;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
   </style>
 
   <!-- 引入 Google MediaPipe Hands 核心庫 -->
@@ -531,7 +553,22 @@
     <div id="game-over-taunt" class="modal-desc" style="font-size:15px; color:#ffdd00; font-weight:800; min-height:44px; margin-bottom:12px; line-height:1.5;"></div>
     <div id="game-over-stats" class="game-over-stats">FINAL SCORE: 0</div>
     <div id="game-over-malice-stats" style="font-size:12px; color:#aaa; margin:10px 0 16px 0; line-height:1.8; text-align:left; background:rgba(255,255,255,0.06); padding:10px 14px; border-radius:10px;"></div>
-    <button id="restart-btn" class="action-btn">含淚重新挑戰</button>
+    <button id="open-polaroid-btn" class="action-btn polaroid-btn" style="width: 100%; max-width: 320px; margin-bottom: 10px;">📸 查看賽博受苦拍立得</button>
+    <button id="restart-btn" class="action-btn" style="width: 100%; max-width: 320px;">含淚重新挑戰</button>
+  </div>
+
+  <!-- 📸 賽博受苦拍立得分享視窗 -->
+  <div id="polaroid-modal" class="modal-overlay" style="display: none; z-index: 120;">
+    <div class="modal-title" style="font-size: 21px; margin-top: 10px; margin-bottom: 4px; background: linear-gradient(135deg, #ff007f, #00f0ff); -webkit-background-clip: text;">📸 賽博受苦拍立得 · 死因診斷書</div>
+    <div style="font-size: 12px; color: #88c0d0; margin-bottom: 10px;">💡 長按圖片可「儲存至相簿」，或點擊下方分享至 IG / Threads！</div>
+    <div style="width: 100%; max-width: 310px; margin: 0 auto;">
+      <img id="polaroid-img" alt="Cyber Polaroid" style="width: 100%; height: auto; border-radius: 10px; box-shadow: 0 0 25px rgba(255, 0, 85, 0.5); border: 1px solid rgba(0, 240, 255, 0.4); display: block;" />
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 14px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 330px;">
+      <button id="polaroid-share-btn" class="action-btn" style="padding: 10px 18px; font-size: 14px; background: linear-gradient(135deg, #ff007f, #ff5500); box-shadow: 0 0 15px rgba(255,0,127,0.6);">📲 一鍵分享 / 儲存</button>
+      <button id="polaroid-restart-btn" class="action-btn" style="padding: 10px 18px; font-size: 14px;">🔄 復仇再戰</button>
+      <button id="polaroid-close-btn" class="action-btn" style="padding: 10px 16px; font-size: 14px; background: rgba(255,255,255,0.18); color: #fff; box-shadow: none;">✖️ 返回</button>
+    </div>
   </div>
 
   <!-- 🏆 Game Victory 通關視窗 -->
@@ -5925,10 +5962,475 @@ function updateShieldUI() {
   }
 }
 
+// ==========================================
+// 📸 賽博受苦拍立得 · 死因診斷書生成系統 (Cyber Polaroid System)
+// ==========================================
+const CORONER_PRESCRIPTIONS = [
+  '「建議患者立即切除無用手腕，直接改裝智能義肢。」',
+  '「眼睛如果用不到，建議盡快捐獻給有需要的生靈。」',
+  '「臨床判定：大腦想防禦，大拇指卻在抽筋。」',
+  '「小腦發育嚴重遲緩，開立處方：指槍多練 500 次。」',
+  '「死得相當有節奏感，家屬情緒十分穩定，下一位！」',
+  '「建議更換防彈面罩，死者的錯愕表情過於滑稽。」',
+  '「診斷：被快慢刀假動作戲耍致死，無藥可救。」',
+  '「經解剖發現，該患者體內充滿了過度的自信與貪念。」',
+  '「醫囑：下次看到閃紅光，請學會尊重物理法則。」',
+  '「遺體鑑定：手指僵硬如木棍，難道扣扳機會觸電？」'
+];
+
+let lastDeathPhotoCanvas = null;
+let lastDeathCauseCaptured = 'UNKNOWN';
+let lastDeathPrescription = '';
+let lastDeathCaseCode = '0000';
+let currentPolaroidDataUrl = null;
+
+function getDeathCauseDetails(cause) {
+  switch (cause) {
+    case 'MIMIC':
+      return {
+        badge: '貪欲攻心 · 假晶片殉爆',
+        detail: '受害者抵擋不住升級誘惑，貪心射擊假晶片誘餌，慘遭即死烈性炸彈炸成碎片！'
+      };
+    case 'PERILOUS':
+      return {
+        badge: '鐵齒硬防 · 湮滅重砲',
+        detail: '無視赤紅『危』字死光警報，非要張開手掌硬擋，慘遭 200 點高能光束直接蒸發！'
+      };
+    case 'FEINT':
+      return {
+        badge: '小腦萎縮 · 假動作騙盾',
+        detail: '慘遭 BOSS 虛晃一槍快慢刀假動作詐出護盾，護盾過熱硬直期間被一刀劈死！'
+      };
+    case 'SEAL_VIOLATION':
+      return {
+        badge: '手賤犯規 · 禁令反噬',
+        detail: '在神明禁令生效期間手賤違規扣動扳機，引發等離子槍膛倒灌自爆身亡！'
+      };
+    case 'FAKE_DEATH':
+      return {
+        badge: '半場開香檳 · 假死創死',
+        detail: '誤以為 BOSS 已經被擊敗提早放鬆警惕，被假死機神 1000 馬赫垂死反撲迎面創飛！'
+      };
+    default:
+      return {
+        badge: '反應遲鈍 · 彈幕分解',
+        detail: '在銀河機甲浩瀚的槍林彈雨中閃避不及，護甲耗盡被全場彈幕解體！'
+      };
+  }
+}
+
+function captureDeathSnapshot() {
+  lastDeathCauseCaptured = lastDeathCause || 'NORMAL';
+  lastDeathPrescription = CORONER_PRESCRIPTIONS[Math.floor(Math.random() * CORONER_PRESCRIPTIONS.length)];
+  lastDeathCaseCode = String(Math.floor(1000 + Math.random() * 9000));
+  currentPolaroidDataUrl = null;
+
+  const snap = document.createElement('canvas');
+  snap.width = 640;
+  snap.height = 480;
+  const sCtx = snap.getContext('2d');
+
+  try {
+    if (videoElement && videoElement.readyState >= 2 && videoElement.videoWidth > 0) {
+      sCtx.save();
+      sCtx.translate(snap.width, 0);
+      sCtx.scale(-1, 1);
+      sCtx.drawImage(videoElement, 0, 0, snap.width, snap.height);
+      sCtx.restore();
+    } else {
+      sCtx.drawImage(canvas, 0, 0, snap.width, snap.height);
+    }
+  } catch (e) {
+    console.warn('Snapshot capture fallback:', e);
+    sCtx.fillStyle = '#101625';
+    sCtx.fillRect(0, 0, snap.width, snap.height);
+  }
+
+  lastDeathPhotoCanvas = snap;
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const chars = text.split('');
+  let line = '';
+  let curY = y;
+  for (let i = 0; i < chars.length; i++) {
+    const testLine = line + chars[i];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && i > 0) {
+      ctx.fillText(line, x, curY);
+      line = chars[i];
+      curY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, curY);
+}
+
+function drawProceduralQrCode(ctx, x, y, size, seed = 12345) {
+  ctx.save();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x, y, size, size);
+
+  const grid = 21;
+  const cellSize = size / grid;
+
+  let s = Math.abs(seed) % 2147483647 || 1;
+  function rnd() {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  }
+
+  function drawFinder(gx, gy) {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + gx * cellSize, y + gy * cellSize, 7 * cellSize, 7 * cellSize);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x + (gx + 1) * cellSize, y + (gy + 1) * cellSize, 5 * cellSize, 5 * cellSize);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(x + (gx + 2) * cellSize, y + (gy + 2) * cellSize, 3 * cellSize, 3 * cellSize);
+  }
+
+  drawFinder(0, 0);
+  drawFinder(14, 0);
+  drawFinder(0, 14);
+
+  for (let i = 8; i < 13; i++) {
+    if (i % 2 === 0) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x + i * cellSize, y + 6 * cellSize, cellSize, cellSize);
+      ctx.fillRect(x + 6 * cellSize, y + i * cellSize, cellSize, cellSize);
+    }
+  }
+
+  for (let r = 0; r < grid; r++) {
+    for (let c = 0; c < grid; c++) {
+      if ((r < 8 && c < 8) || (r < 8 && c >= 13) || (r >= 13 && c < 8)) continue;
+      if (rnd() > 0.48) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x + c * cellSize, y + r * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+function generateCyberPolaroid() {
+  if (currentPolaroidDataUrl) return currentPolaroidDataUrl;
+
+  const pc = document.createElement('canvas');
+  pc.width = 640;
+  pc.height = 880;
+  const ctx = pc.getContext('2d');
+
+  // 1. 底色與賽博科技網格
+  ctx.fillStyle = '#080d19';
+  ctx.fillRect(0, 0, 640, 880);
+
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < 640; x += 32) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 880); ctx.stroke();
+  }
+  for (let y = 0; y < 880; y += 32) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(640, y); ctx.stroke();
+  }
+
+  // 2. 邊框與裝飾角標
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(12, 12, 616, 856);
+
+  ctx.strokeStyle = 'rgba(255, 0, 85, 0.6)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(18, 18, 604, 844);
+
+  // 四角厚重戰術角標
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 4;
+  const bl = 18;
+  ctx.beginPath(); ctx.moveTo(12, 12 + bl); ctx.lineTo(12, 12); ctx.lineTo(12 + bl, 12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(628 - bl, 12); ctx.lineTo(628, 12); ctx.lineTo(628, 12 + bl); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12, 868 - bl); ctx.lineTo(12, 868); ctx.lineTo(12 + bl, 868); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(628 - bl, 868); ctx.lineTo(628, 868); ctx.lineTo(628, 868 - bl); ctx.stroke();
+
+  // 3. 頂部警示斜紋與法醫檔案抬頭
+  const stripeW = 10;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(20, 22, 600, 7);
+  ctx.clip();
+  for (let sx = -40; sx < 640; sx += stripeW * 2) {
+    ctx.fillStyle = '#ff0055';
+    ctx.beginPath();
+    ctx.moveTo(sx, 30);
+    ctx.lineTo(sx + 8, 20);
+    ctx.lineTo(sx + 8 + stripeW, 20);
+    ctx.lineTo(sx + stripeW, 30);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = '900 13px monospace, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('CYBER-CORONER CLINICAL AUTOPSY // 賽博受苦法醫報告', 32, 48);
+
+  ctx.fillStyle = '#88a0c8';
+  ctx.font = '800 11px monospace, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(`CASE FILE: #MALICE-${lastDeathCaseCode} // SECTOR: BOSS-${bossPhase + 1}`, 608, 48);
+
+  // 4. 拍立得相框與玩家遺照
+  const px = 32, py = 64, pw = 576, ph = 416;
+  ctx.fillStyle = '#101524';
+  ctx.fillRect(px, py, pw, ph);
+
+  if (lastDeathPhotoCanvas) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px, py, pw, ph);
+    ctx.clip();
+    ctx.drawImage(lastDeathPhotoCanvas, 0, 0, lastDeathPhotoCanvas.width, lastDeathPhotoCanvas.height, px, py, pw, ph);
+    ctx.restore();
+  }
+
+  // CRT 電視掃描線
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+  for (let sy = py; sy < py + ph; sy += 4) {
+    ctx.fillRect(px, sy, pw, 2);
+  }
+
+  // 陣亡紅色暈影
+  const grad = ctx.createRadialGradient(px + pw / 2, py + ph / 2, pw * 0.15, px + pw / 2, py + ph / 2, pw * 0.58);
+  grad.addColorStop(0, 'rgba(255, 0, 50, 0.05)');
+  grad.addColorStop(1, 'rgba(255, 0, 50, 0.45)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(px, py, pw, ph);
+
+  // 相框邊界
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(px, py, pw, ph);
+
+  // 相片 HUD 資訊
+  ctx.fillStyle = '#ff2255';
+  ctx.font = '900 11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('● REC [FATAL TERMINATION]', px + 12, py + 22);
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = '900 10px monospace, sans-serif';
+  ctx.fillText('PULSE: 0 BPM [FLATLINE]', px + 12, py + ph - 12);
+
+  ctx.fillStyle = '#ffea00';
+  ctx.textAlign = 'right';
+  const nowStr = new Date().toISOString().replace('T', ' ').slice(0, 19);
+  ctx.fillText(nowStr, px + pw - 12, py + ph - 12);
+
+  // 相片中心準星
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.lineWidth = 1.2;
+  const cx = px + pw / 2, cy = py + ph / 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 38, 0, Math.PI * 2);
+  ctx.moveTo(cx - 52, cy); ctx.lineTo(cx - 42, cy);
+  ctx.moveTo(cx + 42, cy); ctx.lineTo(cx + 52, cy);
+  ctx.moveTo(cx, cy - 52); ctx.lineTo(cx, cy - 42);
+  ctx.moveTo(cx, cy + 42); ctx.lineTo(cx, cy + 52);
+  ctx.stroke();
+
+  // 🚨 鮮紅斜角「K.I.A. / 菜就多練」鋼印
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(-11 * Math.PI / 180);
+  ctx.fillStyle = 'rgba(255, 0, 50, 0.28)';
+  ctx.fillRect(-175, -44, 350, 88);
+  ctx.strokeStyle = '#ff0044';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(-175, -44, 350, 88);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(-170, -39, 340, 78);
+
+  ctx.fillStyle = '#ff2255';
+  ctx.font = '900 32px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#ff0033';
+  ctx.shadowBlur = 12;
+  ctx.fillText('💀 K.I.A. 致命重創', 0, -4);
+  ctx.font = '900 11px monospace, sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 0;
+  ctx.fillText('BIO-DAMAGE CONFIRMED // 菜 就 多 練', 0, 22);
+  ctx.restore();
+
+  // 5. 致命死因診斷 (Clinical Diagnosis Box)
+  const causeInfo = getDeathCauseDetails(lastDeathCauseCaptured);
+  const dx = 32, dy = 496, dw = 576, dh = 90;
+  ctx.fillStyle = 'rgba(255, 0, 85, 0.12)';
+  ctx.fillRect(dx, dy, dw, dh);
+  ctx.strokeStyle = 'rgba(255, 0, 85, 0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(dx, dy, dw, dh);
+
+  ctx.fillStyle = '#ff3366';
+  ctx.font = '900 15px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText(`☠️ 致命死因診斷：${causeInfo.badge}`, dx + 14, dy + 12);
+
+  ctx.fillStyle = '#ffd0d8';
+  ctx.font = '700 12px sans-serif';
+  wrapCanvasText(ctx, causeInfo.detail, dx + 14, dy + 38, dw - 28, 18);
+
+  // 6. 生理指標戰績網格 (4 個微型科技小方塊)
+  const gridY = 598;
+  const colW = (dw - 24) / 4;
+  const statsCols = [
+    { label: 'BOSS 階段', val: `第 ${bossPhase + 1} / 10 關`, color: '#ffdd00' },
+    { label: '最終得分', val: `${score}`, color: '#00f0ff' },
+    { label: '殲敵數量', val: `${killCount} 機`, color: '#00ff88' },
+    { label: '累計受苦', val: `${sufferingStats.totalDeaths} 次骨折`, color: '#ff00aa' }
+  ];
+
+  statsCols.forEach((col, idx) => {
+    const cxPos = dx + idx * (colW + 8);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(cxPos, gridY, colW, 58);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cxPos, gridY, colW, 58);
+
+    ctx.fillStyle = '#88a4c8';
+    ctx.font = '800 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(col.label, cxPos + colW / 2, gridY + 9);
+
+    ctx.fillStyle = col.color;
+    ctx.font = '900 14px sans-serif';
+    ctx.fillText(col.val, cxPos + colW / 2, gridY + 28);
+  });
+
+  // 7. 主治法醫處方箋 (Sarcastic Prescription)
+  const pyPos = 668, phVal = 78;
+  ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+  ctx.fillRect(dx, pyPos, dw, phVal);
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(dx, pyPos, dw, phVal);
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = '900 13px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('🩺 主治法醫處方箋 (DOCTOR\'S PRESCRIPTION)：', dx + 14, pyPos + 12);
+
+  ctx.fillStyle = '#ffea00';
+  ctx.font = '800 13px sans-serif';
+  wrapCanvasText(ctx, lastDeathPrescription, dx + 14, pyPos + 36, dw - 28, 18);
+
+  // 8. 底部賽博 QR Code 裝飾與官方網址
+  const fY = 760;
+  drawProceduralQrCode(ctx, dx + 8, fY, 68, (score * 31 + killCount * 7 + 10427));
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 15px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('CYBER FINGER-GUN // 賽博指槍', dx + 88, fY + 6);
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = '800 12px monospace, sans-serif';
+  ctx.fillText('amalex0610.github.io/finger-gun-fps', dx + 88, fY + 28);
+
+  ctx.fillStyle = '#88a4c8';
+  ctx.font = '700 11px sans-serif';
+  ctx.fillText('📱 掃描 QR 碼立刻前往受苦 · 挑戰銀河十王！', dx + 88, fY + 48);
+
+  // 官方認證徽章
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(dx + dw - 44, fY + 34, 28, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.3)';
+  ctx.beginPath();
+  ctx.arc(dx + dw - 44, fY + 34, 24, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#00ff88';
+  ctx.font = '900 7px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('AUTOPSY', dx + dw - 44, fY + 28);
+  ctx.fillText('VERIFIED', dx + dw - 44, fY + 40);
+  ctx.restore();
+
+  currentPolaroidDataUrl = pc.toDataURL('image/png');
+  return currentPolaroidDataUrl;
+}
+
+function openPolaroidModal() {
+  const dataUrl = generateCyberPolaroid();
+  const imgElem = document.getElementById('polaroid-img');
+  if (imgElem) imgElem.src = dataUrl;
+  const pModal = document.getElementById('polaroid-modal');
+  if (pModal) pModal.style.display = 'flex';
+}
+
+function closePolaroidModal() {
+  const pModal = document.getElementById('polaroid-modal');
+  if (pModal) pModal.style.display = 'none';
+}
+
+async function sharePolaroid() {
+  const dataUrl = generateCyberPolaroid();
+  if (!dataUrl) return;
+
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `cyber_polaroid_case_${lastDeathCaseCode}.png`, { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: '我的賽博受苦死因診斷書',
+        text: `我在【賽博指槍】第 ${bossPhase + 1} 關陣亡！死因：${getDeathCauseDetails(lastDeathCauseCaptured).badge}！你撐得過幾秒？`,
+        files: [file]
+      });
+      return;
+    }
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      console.log('Native share fallback:', err);
+    } else {
+      return;
+    }
+  }
+
+  downloadPolaroid();
+}
+
+function downloadPolaroid() {
+  const dataUrl = generateCyberPolaroid();
+  if (!dataUrl) return;
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = `cyber_polaroid_case_${lastDeathCaseCode}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 function triggerGameOver() {
   isGameOver = true;
   setBossTacticalIntel('');
   sfx.stopBgm();
+
+  // 📸 即時抓拍患者陣亡瞬間表情與戰況
+  captureDeathSnapshot();
 
   sufferingStats.totalDeaths++;
   if (lastDeathCause === 'MIMIC') sufferingStats.mimicDeaths++;
@@ -6028,6 +6530,8 @@ function restartGame() {
   scoreElem.innerText = score;
   updateHpUI();
   gameOverModal.style.display = 'none';
+  const polModal = document.getElementById('polaroid-modal');
+  if (polModal) polModal.style.display = 'none';
   const vicModal = document.getElementById('victory-modal');
   if (vicModal) vicModal.style.display = 'none';
   sfx.startBgm();
@@ -7362,6 +7866,39 @@ document.getElementById('restart-btn').addEventListener('click', (e) => {
   e.stopPropagation();
   restartGame();
 });
+
+const openPolaroidBtn = document.getElementById('open-polaroid-btn');
+if (openPolaroidBtn) {
+  openPolaroidBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openPolaroidModal();
+  });
+}
+
+const polaroidShareBtn = document.getElementById('polaroid-share-btn');
+if (polaroidShareBtn) {
+  polaroidShareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sharePolaroid();
+  });
+}
+
+const polaroidRestartBtn = document.getElementById('polaroid-restart-btn');
+if (polaroidRestartBtn) {
+  polaroidRestartBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closePolaroidModal();
+    restartGame();
+  });
+}
+
+const polaroidCloseBtn = document.getElementById('polaroid-close-btn');
+if (polaroidCloseBtn) {
+  polaroidCloseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closePolaroidModal();
+  });
+}
 
 const victoryRestartBtn = document.getElementById('victory-restart-btn');
 if (victoryRestartBtn) {
